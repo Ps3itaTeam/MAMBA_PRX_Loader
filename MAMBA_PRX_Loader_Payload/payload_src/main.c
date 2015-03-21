@@ -26,8 +26,11 @@
 
 #define SYSCALL1022_OPCODE_LOAD_MAMBA				0x7755
 
+int mamba_loaded = 0;
+
 int sys_load_mamba(char *mamba_file)
 {
+	if (mamba_loaded == 1) return -1;
 	mamba_file = get_secure_user_ptr(mamba_file); 
 	CellFsStat stat;
 	int ret = cellFsStat(mamba_file, &stat);
@@ -49,7 +52,8 @@ int sys_load_mamba(char *mamba_file)
 					cellFsClose(fd);
 					return -1;
 				}
-				cellFsClose(fd); 
+				cellFsClose(fd);
+				mamba_loaded = 1;	
 				f_desc_t f;
 				f.toc = (void *)MKA(TOC);
 				int (* func)(void);	
