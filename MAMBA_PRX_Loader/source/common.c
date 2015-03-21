@@ -1,64 +1,67 @@
-#include <ppu-lv2.h>
 #include <stdio.h>
 #include <string.h>
+#include <ppu-lv2.h>
+#include <sys/systime.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 
 #include "common.h"
 
+#define FS_S_IFMT 0170000
+
+#define VERSION_NAME "MAMBA/PRX Autoloader v2.0.0 by NzV"
+
 //----------------------------------------
-//FILE UTILS
+//LOG
 //----------------------------------------
 
-char * LoadFile(char *path, int *file_size)
+int verbose = 0;
+
+#ifdef ENABLE_LOG
+
+int fd_log = -1;
+
+int WriteToLog(char *str)
 {
-    FILE *fp;
-    char *mem = NULL;
-
-    *file_size = 0;
-
-    sysLv2FsChmod(path, FS_S_IFMT | 0777);
-
-    fp = fopen(path, "rb");
-
-    if (fp != NULL)
-    {
-        fseek(fp, 0, SEEK_END);
-
-        *file_size = ftell(fp);
-
-        mem = malloc(*file_size);
-
-        if(!mem) {fclose(fp); return NULL;}
-
-        fseek(fp, 0, SEEK_SET);
-
-        if(*file_size != fread((void *) mem, 1, *file_size, fp))
-        {
-            fclose(fp); *file_size = 0;
-            free(mem); return NULL;
-        }
-        fclose(fp);
-    }
-
-    return mem;
+	if(fd_log < 0 ) return FAILED;
+	if(!str) return SUCCESS;
+    u64 size = strlen(str);
+    if(size == 0) return SUCCESS;
+    u64 ret_size = 0;
+    sprintf(str,"%s", str);
+	if(sysLv2FsWrite(fd_log, str, size, &ret_size) || ret_size!=size)
+	{
+		return FAILED;
+	}
+    return SUCCESS;
 }
 
-int file_exists(const char *path)
+void CloseLog()
 {
-    sysFSStat stat;
-    int ret = sysLv2FsStat(path, &stat);
-    if(ret == SUCCESS && S_ISDIR(stat.st_mode)) return FAILED;
-    return ret;
+	if (verbose) WriteToLog("-----[END]-----");
+    if (verbose) WriteToLog("---[By NzV]---");
+	verbose = 0;
+	if(fd_log >= 0) sysLv2FsClose(fd_log);
+    fd_log = -1;
 }
 
-int dir_exists(const char *path)
+int Open_Log(char *file)
 {
-    sysFSStat stat;
-    int ret = sysLv2FsStat(path, &stat);
-    if(ret == SUCCESS && S_ISDIR(stat.st_mode)) return SUCCESS;
+    if(fd_log >= 0) return -666;
+    if(!sysLv2FsOpen(file, SYS_O_WRONLY | SYS_O_CREAT | SYS_O_TRUNC, &fd_log, 0777, NULL, 0))
+	{
+        sysLv2FsChmod(file, FS_S_IFMT | 0777);
+        if(WriteToLog(VERSION_NAME)!=SUCCESS) {CloseLog(); return FAILED;}
+        WriteToLog("-----[LOG]-----");
+        return SUCCESS;
+    } 
+    fd_log = -1;
+	verbose = 0;
     return FAILED;
+    
 }
+
+#endif
 
 //----------------------------------------
 //COBRA/MAMBA
@@ -93,4 +96,55 @@ int is_mamba(void)
     if (sys8_get_version(&version) < 0)	return FAILED;
     if (version != 0x99999999 && sys8_get_mamba() == 0x666)	return SUCCESS;
     return FAILED;
+}
+
+//----------------------------------------
+//FILE UTILS
+//----------------------------------------
+
+sysFSStat stat1;
+
+int file_exists(const char *path)
+{
+    int ret = sysLv2FsStat(path, &stat1);
+    if(ret == SUCCESS && S_ISDIR(stat1.st_mode)) return FAILED;
+    return ret;
+}
+
+int dir_exists(const char *path)
+{
+    int ret = sysLv2FsStat(path, &stat1);
+    if(ret == SUCCESS && S_ISDIR(stat1.st_mode)) return SUCCESS;
+    return FAILED;
+}
+
+int unlink_secure(void *path)
+{	
+    if(file_exists(path)==SUCCESS)
+	{
+        sysLv2FsChmod(path, FS_S_IFMT | 0777);
+        return sysLv2FsUnlink(path);
+    }
+    return FAILED;
+}
+
+//----------------------------------------
+//POWER UTILS
+//----------------------------------------
+
+
+int sys_shutdown()
+{   
+    unlink_secure("/dev_hdd0/tmp/turnoff");
+    
+    lv2syscall4(379,0x1100,0,0,0);
+    return_to_user_prog(int);
+}
+
+int sys_reboot()
+{
+    unlink_secure("/dev_hdd0/tmp/turnoff");
+
+    lv2syscall4(379,0x1200,0,0,0);
+    return_to_user_prog(int);
 }

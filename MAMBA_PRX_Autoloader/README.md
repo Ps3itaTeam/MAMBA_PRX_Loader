@@ -1,10 +1,10 @@
+==============================================================
 MAMBA/PRX Autoloader (c) 2015 NzV
 
-Add load of MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core as loader.
+Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core.
 
--The generated "sys_init_osd.self" is fw dependent (CEX an DEX version include in the same self)!
--The generated "sys_init_osd.self" should replace sys_init_osd.self in /dev_flash/sys/internal/
- who need to be previously renamed sys_init_osd_orig.self
+The generated "sys_init_osd.self" should replace sys_init_osd.self in /dev_flash/sys/internal/
+who need to be previously renamed as sys_init_osd_orig.self
  
 ===============================
 			[FLAGS]
@@ -21,21 +21,10 @@ Flags can be placed in /dev_usb000/core_flags/ or /dev_usb001/core_flags/ or /de
 		[VSH PLUGINS]
 ===============================
 
--If flag "mamba_off" is not set VSH Plugins will be loaded from file /dev_hdd0/mamba_plugins.txt with MAMBA
--Else they will be loaded from file /dev_hdd0/prx_plugins.txt with prx loader
+If flag "mamba_off" is not set VSH Plugins will be loaded from file /dev_hdd0/mamba_plugins.txt with MAMBA
+else they will be loaded from file /dev_hdd0/prx_plugins.txt with prx loader
 
 ==============================================================
-
-This program is based in:
-
-- New Core by MiralaTijera and changes by Estwald 
-
-- MAMBA by Estwald and unofficial updates by _NZV_ (GetVSHProcess, PS3M_API)
-  Some part of code for load MAMBA payload come from Iris Manager and his fork (IRISMAN, GAMESONIC MANAGER, MANAGUNZ)
-
-- PRX Loader by User and unofficial updates by _NZV_ (GetVSHProcess)
-  Some part of code for load PRX Loader payload come from "payload autoloader" by KW
-
 ==============================================================
 
 (c) 2013 MiralaTijera <www.elotrolado.net> (Original Core)

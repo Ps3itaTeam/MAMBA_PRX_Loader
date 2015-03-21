@@ -26,7 +26,7 @@ INCLUDES	+=	 include/payload/Iris_sky/440 include/payload/Iris_sky/441 include/p
 INCLUDES	+=	 include/payload/Iris_sky/455 include/payload/Iris_sky/460 include/payload/Iris_sky/465 include/payload/Iris_sky/466 include/payload/Iris_sky/470
 PKGFILES	:=	$(CURDIR)/pkgfiles
 
-TITLE		:=	MAMBA/PRX Loader v1.5.0
+TITLE		:=	MAMBA/PRX Loader (+Autoloader) v2.0.0
 APPID		:=	MAMBAPRXL
 CONTENTID	:=	EP0001-$(APPID)_00-0000000000000000
 

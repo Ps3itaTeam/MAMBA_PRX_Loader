@@ -1,13 +1,12 @@
 /*
 	==============================================================
 	
-	MAMBA/PRX Autoloader by NzV
+	MAMBA/PRX Autoloader (c) 2015 NzV
 	
-	Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core as loader.
+	Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core.
 
-	-The generated "sys_init_osd.self" is fw dependent (CEX an DEX version include in the same self)!
-	-The generated "sys_init_osd.self" should replace sys_init_osd.self in /dev_flash/sys/internal/
-	 who need to be previously renamed sys_init_osd_orig.self
+	The generated "sys_init_osd.self" should replace sys_init_osd.self in /dev_flash/sys/internal/
+	who need to be previously renamed as sys_init_osd_orig.self
 	 
 	===============================
 				[FLAGS]
@@ -24,26 +23,15 @@
 			[VSH PLUGINS]
 	===============================
 	
-	-If flag "mamba_off" is not set VSH Plugins will be loaded from file /dev_hdd0/mamba_plugins.txt with MAMBA
-	-Else they will be loaded from file /dev_hdd0/prx_plugins.txt with prx loader
+	If flag "mamba_off" is not set VSH Plugins will be loaded from file /dev_hdd0/mamba_plugins.txt with MAMBA
+	else they will be loaded from file /dev_hdd0/prx_plugins.txt with prx loader
 	
 	==============================================================
-
-	This program is based in:
-	
-	- New Core by MiralaTijera and changes by Estwald 
-	
-	- MAMBA by Estwald and unofficial updates by _NZV_ (GetVSHProcess, PS3M_API)
-	  Some part of code for load MAMBA payload come from Iris Manager and his fork (IRISMAN, GAMESONIC MANAGER, MANAGUNZ)
-	
-	- PRX Loader by User and unofficial updates by _NZV_ (GetVSHProcess)
-	  Some part of code for load PRX Loader payload come from "payload autoloader" by KW
-	
 	==============================================================
 	
 	(c) 2013 MiralaTijera <www.elotrolado.net> (Original Core)
 	(c) 2013 Estwald <www.elotrolado.net> (New Core)
-
+	
 	"New Core" is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -64,108 +52,14 @@
 #include <string.h>
 #include <ppu-lv2.h>
 #include <sys/systime.h>
-#include <sys/file.h>
-#include <sys/stat.h>
 
 #include "common.h"
-
-//#define DISABLE_MAMBA
-//#define DISABLE_VSH_PLUG
-
-#ifndef DISABLE_MAMBA
-#include "mamba.h"
-#endif
-
-#ifndef DISABLE_VSH_PLUG
-#include "vsh_plugins_loader.h"
-#endif
-
-#define VERSION_NAME "MAMBA/PRX Autoloader v1.5.0 by NzV"
-
-#define FS_S_IFMT 0170000
-
-//----------------------------------------
-//FLAG
-//----------------------------------------
-
-int verbose = 0;
-int failsafe = 0;
-#ifndef DISABLE_MAMBA
-int mamba_off = 0;
-#endif
-#ifndef DISABLE_VSH_PLUG
-int noplugins = 0;
-#endif
-
-//----------------------------------------
-//LOG
-//----------------------------------------
-
-#ifdef ENABLE_LOG
-
-int fd_log = -1;
-
-int WriteToLog(char *str)
-{
-	if(fd_log < 0 ) return FAILED;
-	if(!str) return SUCCESS;
-    u64 size = strlen(str);
-    if(size == 0) return SUCCESS;
-    u64 ret_size = 0;
-    if(sysLv2FsWrite(fd_log, str, size, &ret_size) || ret_size!=size)
-	{
-		return FAILED;
-	}
-    return SUCCESS;
-}
-
-void CloseLog()
-{
-	if (verbose) WriteToLog("-----[END]-----\r\n");
-    if (verbose) WriteToLog("---[By NzV]---\r\n");
-	verbose = 0;
-	if(fd_log >= 0) sysLv2FsClose(fd_log);
-    fd_log = -1;
-}
-
-int Open_Log(char *file)
-{
-    if(fd_log >= 0) return -666;
-    if(!sysLv2FsOpen(file, SYS_O_WRONLY | SYS_O_CREAT | SYS_O_TRUNC, &fd_log, 0777, NULL, 0))
-	{
-        sysLv2FsChmod(file, FS_S_IFMT | 0777);
-        if(WriteToLog(VERSION_NAME)!=SUCCESS) {CloseLog(); return FAILED;}
-        WriteToLog("\r\n-----[LOG]-----\r\n");
-        return SUCCESS;
-    } 
-    fd_log = -1;
-	verbose = 0;
-    return FAILED;
-    
-}
-
-#endif
+#include "lv2_utils.h"
+#include "mamba_prx_loader.h"
 
 //----------------------------------------
 //UTILS
 //----------------------------------------
-
-
-int file_exists(const char *path)
-{
-    sysFSStat stat;
-    int ret = sysLv2FsStat(path, &stat);
-    if(ret == SUCCESS && S_ISDIR(stat.st_mode)) return FAILED;
-    return ret;
-}
-
-int dir_exists(const char *path)
-{
-    sysFSStat stat;
-    int ret = sysLv2FsStat(path, &stat);
-    if(ret == SUCCESS && S_ISDIR(stat.st_mode)) return SUCCESS;
-    return FAILED;
-}
 
 extern int _sys_process_atexitspawn(u32 a, const char *file, u32 c, u32 d, u32 e, u32 f);
 
@@ -177,16 +71,6 @@ int launchself(const char*file)
     }
     return FAILED;
 		
-}
-
-int unlink_secure(void *path)
-{	
-    if(file_exists(path)==SUCCESS)
-	{
-        sysLv2FsChmod(path, FS_S_IFMT | 0777);
-        return sysLv2FsUnlink(path);
-    }
-    return FAILED;
 }
 
 int sys_fs_mount_ext(char const* deviceName, char const* deviceFileSystem, char const* devicePath, int writeProt, u32* buffer, u32 count) 
@@ -217,6 +101,8 @@ int try_mount_usb0()
 //INIT FLAG
 //----------------------------------------
 
+int failsafe = 0;
+
 void InitFlag()
 {
 	failsafe = verbose = 0;
@@ -242,40 +128,9 @@ void InitFlag()
     if(file_exists("/dev_usb000/core_flags/failsafe")==0) failsafe = 1;
 	else if(file_exists("/dev_usb001/core_flags/failsafe")==0) failsafe = 1;
 	else if(file_exists("/dev_hdd0/tmp/core_flags/failsafe")==0) failsafe = 1;
-	#ifndef DISABLE_MAMBA
-	//Flag MAMBA
-	mamba_off = 0;
-    if(file_exists("/dev_usb000/core_flags/mamba_off")==0) mamba_off = 1;
-	else if(file_exists("/dev_usb001/core_flags/mamba_off")==0) mamba_off = 1;
-	else if(file_exists("/dev_hdd0/tmp/core_flags/mamba_off")==0) mamba_off = 1;
-	#endif
-	#ifndef DISABLE_VSH_PLUG
-	//Flag VSH Plugins
-	noplugins = 0;
-	if(file_exists("/dev_usb000/core_flags/noplugins")==0) noplugins = 1;
-	else if(file_exists("/dev_usb001/core_flags/noplugins")==0) noplugins = 1;
-	else if(file_exists("/dev_hdd0/tmp/core_flags/noplugins")==0) noplugins = 1;
-	#endif
 	//Log
 	#ifdef ENABLE_LOG
-	
-	if (verbose && (failsafe || mamba_off || noplugins )) WriteToLog("[FLAGS]\r\n");
-	if (failsafe)
-	{
-		if (verbose) WriteToLog("Success: Flag failsafe detected\r\n");	
-	}
-	#ifndef DISABLE_MAMBA
-	if (mamba_off)
-	{
-		if (verbose) WriteToLog("Success: Flag mamba_off detected\r\n");	
-	}
-	#endif
-	#ifndef DISABLE_VSH_PLUG
-	if (noplugins)
-	{
-		if (verbose) WriteToLog("Success: Flag noplugins detected\r\n");	
-	}
-	#endif
+	if (failsafe && verbose) WriteToLog("Success: Flag failsafe detected");	
 	#endif
 }
 
@@ -299,27 +154,27 @@ s32 main(s32 argc, const char* argv[])
 				#ifdef ENABLE_LOG
 				verbose = 1;
 				Open_Log("/dev_usb000/new_core.log");
-				if (verbose) WriteToLog("Error: sys_init_osd_orig.self and vsh.self not found or corrupt\r\n");
+				if (verbose) WriteToLog("Error: sys_init_osd_orig.self and vsh.self not found or corrupt");
 				#endif
 				
 				if(sys_fs_mount_ext("CELL_FS_IOS:BUILTIN_FLSH1", "CELL_FS_FAT", "/dev_rewrite", 0, NULL, 0)==SUCCESS)
 				{
 					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Success: /dev_rewrite mounted\r\n");
+					if (verbose) WriteToLog("Success: /dev_rewrite mounted");
 					#endif
 				}
 				#ifdef ENABLE_LOG
 				else
 				{
 					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Error: /dev_rewrite not mounted\r\n");
+					if (verbose) WriteToLog("Error: /dev_rewrite not mounted");
 					#endif
 				}
 				#endif
 				if(launchself("/dev_usb000/emergency.self")!=SUCCESS)
 				{
 					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Error: Launch /dev_usb000/emergency.self failed\r\n");
+					if (verbose) WriteToLog("Error: Launch /dev_usb000/emergency.self failed");
 					CloseLog();
 					#endif
 					unlink_secure("/dev_hdd0/tmp/turnoff");
@@ -327,7 +182,7 @@ s32 main(s32 argc, const char* argv[])
 					goto exit_new_core;
 				}
 				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: /dev_usb000/emergency.self launched\r\n");
+				if (verbose) WriteToLog("Error: /dev_usb000/emergency.self launched");
 				#endif
 			}
 			goto exit_new_core;
@@ -350,45 +205,29 @@ s32 main(s32 argc, const char* argv[])
 	//FAILSAFE
 	if (failsafe) goto exit_new_core;
 
-	//COBRA
+	//COBRA ENABLED ?
 	if (is_cobra() == SUCCESS) 
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Error: Running in COBRA mode!\r\n");
+		if (verbose) WriteToLog("Error: Running in COBRA mode!");
 		#endif
 		goto exit_new_core;
 	}
 	
-	#ifndef DISABLE_MAMBA
-	//MAMBA
-	if (!mamba_off)
-	{
-		if (load_mamba(verbose) == SUCCESS)
+	//CLEAR STAGE1 IF COBRA CFW
+	if ((dir_exists("/dev_flash/rebug/cobra") == SUCCESS) || (dir_exists("/dev_flash/habib/cobra") == SUCCESS) ||
+		(file_exists("/dev_flash/sys/stage2_disabled.bin") == SUCCESS) || (file_exists("/dev_flash/sys/stage2.bak") == SUCCESS))
 		{
+			int i;
+			for(i=0;i<(512/8);i++)
+					lv2poke(0x80000000007F0000ULL + (i * 8), 0ULL);
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog(GetMambaLog());
+			if (verbose) WriteToLog("Success: Cleared COBRA stage1");
 			#endif
 		}
-		else
-		{
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog(GetMambaLog());
-			#endif
-			goto exit_new_core;
-		}
-	}	
-	#endif
 	
-	#ifndef DISABLE_VSH_PLUG
-	//VSH PLUGINS
-	if (!noplugins)
-	{
-		load_vsh_plugins(verbose);
-		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog(GetVSHPlugLog());
-		#endif
-	}
-	#endif
+	//MAMBA/PRX LOADER
+	mamba_prx_loader(0,0);
 	
 	//END
 exit_new_core:	

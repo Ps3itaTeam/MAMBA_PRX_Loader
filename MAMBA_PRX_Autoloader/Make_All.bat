@@ -7,6 +7,6 @@ set PS3DEV=%PS3SDK%/ps3dev
 
 make clean
 
-make all
+make
 
 pause

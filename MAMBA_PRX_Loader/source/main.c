@@ -24,8 +24,10 @@
 #include <io/pad.h>
 
 #include "common.h"
+#include "mamba_prx_loader.h"
+#include "lv2_utils.h"
 
-#define VERSION_NAME 	"MAMBA/PRX Loader v1.5.0 by NzV"
+#define VERSION_NAME 	"MAMBA/PRX Loader v2.0.0 by NzV"
 
 #define SC_SYS_POWER 		(379)
 #define SYS_REBOOT			0x8201
@@ -37,143 +39,13 @@
 #define BUTTON_L1         	4
 
 //----------------------------------------
-//FLAG
-//----------------------------------------
-
-int verbose = 1;
-
-//----------------------------------------
-//LOG
-//----------------------------------------
-
-#ifdef ENABLE_LOG
-
-#define	LOG_PATH	 	"/dev_hdd0/tmp/MAMBA_PRX_Loader.log"
-
-int fd_log = -1;
-
-int WriteToLog(char *str)
-{
-	if(fd_log < 0 ) return FAILED;
-	if(!str) return SUCCESS;
-    u64 size = strlen(str);
-    if(size == 0) return SUCCESS;
-    u64 ret_size = 0;
-    if(sysLv2FsWrite(fd_log, str, size, &ret_size) || ret_size!=size)
-	{
-		return FAILED;
-	}
-    return SUCCESS;
-}
-
-void CloseLog()
-{
-	if (verbose) WriteToLog("-----[END]-----\r\n");
-    if (verbose) WriteToLog("---[By NzV]---\r\n");
-	verbose = 0;
-	if(fd_log >= 0) sysLv2FsClose(fd_log);
-    fd_log = -1;
-}
-
-int Open_Log(char *file)
-{
-    if(fd_log >= 0) return -666;
-    if(!sysLv2FsOpen(file, SYS_O_WRONLY | SYS_O_CREAT | SYS_O_TRUNC, &fd_log, 0777, NULL, 0))
-	{
-        sysLv2FsChmod(file, FS_S_IFMT | 0777);
-        if(WriteToLog(VERSION_NAME)!=SUCCESS) {CloseLog(); return FAILED;}
-        WriteToLog("\r\n-----[LOG]-----\r\n");
-        return SUCCESS;
-    } 
-    fd_log = -1;
-	verbose = 0;
-    return FAILED;
-    
-}
-
-#endif
-
-//----------------------------------------
-//MAMBA/PRX LOADER
-//----------------------------------------
-
-#ifndef DISABLE_MAMBA
-#include "mamba.h"
-#endif
-
-#ifndef DISABLE_VSH_PLUG
-#include "vsh_plugins_loader.h"
-#endif
-
-//#define DISABLE_MAMBA
-//#define DISABLE_VSH_PLUG
-
-#ifndef DISABLE_MAMBA
-int mamba_off = 0;
-#endif
-
-#ifndef DISABLE_VSH_PLUG
-int noplugins = 0;
-#endif
-
-int run_mamba_prx_loader()
-{	
-	//COBRA
-	if (is_cobra() == SUCCESS) 
-	{
-		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Error: Running in COBRA mode!\r\n");
-		#endif
-		goto err_exit_loader;
-	}
-	
-	#ifndef DISABLE_MAMBA
-	//MAMBA
-	if (!mamba_off)
-	{
-		if (load_mamba(verbose) == SUCCESS)
-		{
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog(GetMambaLog());
-			#endif
-		}
-		else
-		{
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog(GetMambaLog());
-			#endif
-			goto err_exit_loader;
-		}
-	}	
-	#endif
-	
-	#ifndef DISABLE_VSH_PLUG
-	//VSH PLUGINS
-	if (!noplugins)
-	{
-		load_vsh_plugins(verbose);
-		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog(GetVSHPlugLog());
-		#endif
-	}
-	#endif
-	
-	//END
-	return SUCCESS;
-	//END ERROR
-err_exit_loader:
-	return FAILED;
-}
-
-//----------------------------------------
 //MAMBA/PRX AUTOLOADER
 //----------------------------------------
 
-#include "lv2_utils.h"
-
 #define PATH_SYS_INI_OSD 		"/dev_blind/sys/internal/sys_init_osd.self" 
 #define PATH_SYS_INI_OSD_ORIG 	"/dev_blind/sys/internal/sys_init_osd_orig.self"
-#define PATH_DIR_AUTOLOADER 	"/dev_hdd0/game/MAMBAPRXL/USRDIR/Autoloader/"
+#define PATH_SYS_INI_OSD_NEW 	"/dev_hdd0/game/MAMBAPRXL/USRDIR/NewCore/sys_init_osd.self"
+#define PATH_DIR_PAYLOAD 		"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/"
 #define	VSH_PLUGINS_PATH_MAMBA	"/dev_hdd0/mamba_plugins.txt"
 #define	VSH_PLUGINS_PATH_PRX	"/dev_hdd0/prx_plugins.txt"
 
@@ -245,67 +117,73 @@ int get_firmware()
 	uint64_t toc = lv2peek(0x8000000000003000ULL);
 	switch(toc)
 	{
+		case 0x8000000000330540ULL:
+			return 0x355C;
+		break;
+		case 0x800000000034AC80ULL:
+			return 0x355D;
+		break;
 		case 0x8000000000346390ULL:
-			return 0x421;//C;
+			return 0x421C;
 		break;
 		case 0x8000000000363E80ULL:
-			return 0x421;//D;
+			return 0x421D;
 		break;
 		case 0x8000000000348200ULL:
-			return 0x430;//C;
+			return 0x430C;
+		break;
+		case 0x8000000000365CA0ULL:
+			return 0x430D;
 		break;
 		case 0x8000000000348210ULL:
-			return 0x431;//C;
+			return 0x431C;
 		break;
 		case 0x80000000003487D0ULL:
-			return 0x440;//C;
+			return 0x440C;
 		break;
 		case 0x80000000003487E0ULL:
-			return 0x441;//C;
+			return 0x441C;
 		break;
 		case 0x80000000003665C0ULL:
-			return 0x441;//D;
+			return 0x441D;
 		break;
 		case 0x8000000000366BD0ULL:
-			return 0x446;//D;
+			return 0x446D;
 		break;
 		case 0x8000000000348DF0ULL:
-			return 0x446;//C;
+			return 0x446C;
 		break;
 		case 0x800000000034B160ULL:
-			return 0x450;//C;
+			return 0x450C;
 		break;
 		case 0x800000000036EC40ULL:
-			return 0x450;//D;
+			return 0x450D;
 		break;
 		case 0x800000000034B2E0ULL:
-			return 0x453;//C;
+			return 0x453C;
 		break;
 		case 0x8000000000370620ULL:
-			return 0x453;//D;
+			return 0x453D;
 		break;
 		case 0x800000000034E620ULL:
-			return 0x455;//C;
+			return 0x455C;
 		break;
 		case 0x80000000003738E0ULL:
-			return 0x455;//D;
+			return 0x455D;
 		break;
 		case 0x800000000034F950ULL:
-			return 0x460;//C;
+			return 0x460C;
 		break;
 		case 0x800000000034F960ULL:
-			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466;//C;
-			else return 0x465;//C;
+			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466C;
+			else return 0x465C;
 		break;
 		case 0x8000000000375510ULL:
-			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466;//D;
-			else return 0x465;//D;
+			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466D;
+			else return 0x465D;
 		break;
 		case 0x800000000034FB10ULL:
-			return 0x470;//C;
-		break;
-		default:
-			return 0;
+			return 0x470C;
 		break;
 	}
 	return 0;
@@ -334,9 +212,20 @@ int run_uninstall_autoloader()
 		{
 			if(file_exists(PATH_SYS_INI_OSD) == SUCCESS)
 			{
-				sysLv2FsChmod(PATH_SYS_INI_OSD, 0777);
-				sysLv2FsUnlink(PATH_SYS_INI_OSD);
+				unlink_secure(PATH_SYS_INI_OSD);
 				sysLv2FsRename(PATH_SYS_INI_OSD_ORIG, PATH_SYS_INI_OSD);
+				//Remove payload
+				char filename[128];
+				int fw_list[32] = {0x355C,0x421C,0x430C,0x431C,0x440C,0x441C,0x446C,0x450C,0x453C,0x455C,0x460C,0x465C,0x466C,0x470C,0x355D,0x421D,0x430D,0x441D,0x446D,0x450D,0x453D,0x455D,0x465D,0x466D};
+				int i;
+				for (i = 0; i < 32; i++)
+				{
+					if (fw_list[i] == 0) break;
+					sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", fw_list[i]);
+					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+					sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", fw_list[i]);
+					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+				}
 				#ifdef ENABLE_LOG
 				if (verbose) WriteToLog("Success: MAMBA/PRX Autoloader uninstalled\r\n");
 				#endif
@@ -361,24 +250,47 @@ int run_uninstall_autoloader()
 
 int run_install_autoloader()
 {	
-		//Uninstall New_Core
-		run_uninstall_autoloader();
-		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("[INSTALLER]");
-		#endif 
 		//Init FW
-		char filename[256];
-		sprintf (filename, "%ssys_init_osd_%X.self",PATH_DIR_AUTOLOADER , get_firmware());
+		int firmware = get_firmware();
 		#ifdef ENABLE_LOG
-		if (verbose) {WriteToLog(filename); WriteToLog("\r\n");}
+		if (verbose) {WriteToLog(PATH_SYS_INI_OSD_NEW); WriteToLog("\r\n");}
 		#endif 
-		if(file_exists(filename) != SUCCESS)
+		if(file_exists(PATH_SYS_INI_OSD_NEW) != SUCCESS)
 		{ 
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif 
 			return FAILED;
 		}
+		char filename_mpl_payload[256];
+		sprintf (filename_mpl_payload, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware);
+		#ifdef ENABLE_LOG
+		if (verbose) {WriteToLog(filename_mpl_payload); WriteToLog("\r\n");}
+		#endif 
+		if(file_exists(filename_mpl_payload) != SUCCESS)
+		{ 
+			#ifdef ENABLE_LOG
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
+			#endif 
+			return FAILED;
+		}
+		char filename_mamba_payload[256];
+		sprintf (filename_mamba_payload, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware);
+		#ifdef ENABLE_LOG
+		if (verbose) {WriteToLog(filename_mamba_payload); WriteToLog("\r\n");}
+		#endif 
+		if(file_exists(filename_mamba_payload) != SUCCESS)
+		{ 
+			#ifdef ENABLE_LOG
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
+			#endif 
+			return FAILED;
+		}
+		//Uninstall New_Core
+		run_uninstall_autoloader();
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("[INSTALLER]");
+		#endif 
 		//Enable dev_blind
 		if(file_exists(PATH_SYS_INI_OSD) != SUCCESS)
 			{{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }}
@@ -389,10 +301,17 @@ int run_install_autoloader()
 			{
 				sysLv2FsChmod(PATH_SYS_INI_OSD, 0777);
 				sysLv2FsRename(PATH_SYS_INI_OSD, PATH_SYS_INI_OSD_ORIG);
-				CopyFile(filename, PATH_SYS_INI_OSD);
+				CopyFile(PATH_SYS_INI_OSD_NEW, PATH_SYS_INI_OSD);
+				char filename[128];
+				sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", firmware);
+				if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+				CopyFile(filename_mpl_payload, filename);
+				sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", firmware);
+				if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+				CopyFile(filename_mamba_payload, filename);
 				if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt") == SUCCESS) && (file_exists(VSH_PLUGINS_PATH_MAMBA) != SUCCESS))
 				{
-					CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/plugins.txt", VSH_PLUGINS_PATH_MAMBA);
+					CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt", VSH_PLUGINS_PATH_MAMBA);
 				}
 				if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt") == SUCCESS)  && (file_exists(VSH_PLUGINS_PATH_PRX) != SUCCESS))
 				{
@@ -420,6 +339,11 @@ int run_install_autoloader()
 //----------------------------------------
 //MAIN
 //----------------------------------------
+
+#define	LOG_PATH	 	"/dev_hdd0/tmp/MAMBA_PRX_Loader.log"
+
+int mamba_off = 0;
+int noplugins = 0;
 
 int main()
 {	
@@ -504,7 +428,7 @@ int main()
 		}
 	}
 	//Run MAMBA/PRX Loader
-	else if (run_mamba_prx_loader() ==  SUCCESS)
+	else if ( mamba_prx_loader(mamba_off, noplugins) ==  SUCCESS)
 	{	
 		#ifdef ENABLE_LOG
 		CloseLog();
