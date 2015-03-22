@@ -1,28 +1,28 @@
 /*
 	==============================================================
-	
-	MAMBA/PRX Autoloader by NzV
-	
-	Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader).
-	
+
+	MAMBA/PRX Loader payload by NzV
+
 	==============================================================
 */
+
+#define MAMBA_LOADER
+#define PRX_LOADER
 
 #include <lv2/lv2.h>
 #include <lv2/libc.h>
 #include <lv2/memory.h>
 #include <lv2/syscall.h>
-#include <lv2/thread.h>
-#include <lv2/process.h>
-#include <lv2/modules.h>
-#include <lv2/error.h>
-#include <lv2/io.h>
-#include <lv2/patch.h>
 #include <lv2/symbols.h>
+#include <lv2/error.h>
 
+#ifdef MAMBA_LOADER
 //-----------------------
 //MAMBA LOADER
 //-----------------------
+
+#include <lv2/io.h>
+#include <lv2/patch.h>
 
 #define SYSCALL1022_OPCODE_LOAD_MAMBA				0x7755
 
@@ -30,29 +30,29 @@ int mamba_loaded = 0;
 
 int sys_load_mamba(char *mamba_file)
 {
-	if (mamba_loaded == 1) return -1;
+	if (mamba_loaded == 1) return ECANCELED;
 	mamba_file = get_secure_user_ptr(mamba_file); 
 	CellFsStat stat;
 	int ret = cellFsStat(mamba_file, &stat);
 	if (ret == 0)
 	{
-		void *mamba = NULL;
 		int fd;	
-		if (cellFsOpen(mamba_file, CELL_FS_O_RDONLY, &fd, 0, NULL, 0) == 0)
+		ret = cellFsOpen(mamba_file, CELL_FS_O_RDONLY, &fd, 0, NULL, 0);
+		if (ret == 0)
 		{
 			uint32_t psize = stat.st_size;	
-			mamba = alloc(psize, 0x27);
+			void *mamba = alloc(psize, 0x27);
 			if (mamba)
 			{
 				uint64_t rs;
-				if (cellFsRead(fd, mamba, psize, &rs) != 0)
+				ret = cellFsRead(fd, mamba, psize, &rs);
+				cellFsClose(fd);
+				if (ret != 0)
 				{
 					dealloc(mamba, 0x27);
 					mamba = NULL;
-					cellFsClose(fd);
-					return -1;
+					return ret;
 				}
-				cellFsClose(fd);
 				mamba_loaded = 1;	
 				f_desc_t f;
 				f.toc = (void *)MKA(TOC);
@@ -62,14 +62,21 @@ int sys_load_mamba(char *mamba_file)
 				func();
 				return 0;
 			}
+			return ENOMEM;
 		}       
 	}
 	return ret;
 }
+#endif
 
+#ifdef PRX_LOADER
 //-----------------------
 //PRX LOADER
 //-----------------------
+
+#include <lv2/thread.h>
+#include <lv2/process.h>
+#include <lv2/modules.h>
 
 #define SYSCALL1022_OPCODE_LOAD_VSH_PLUGIN			0x1EE7 //Same as COBRA
 #define SYSCALL1022_OPCODE_UNLOAD_VSH_PLUGIN		0x364F //Same as COBRA
@@ -97,8 +104,11 @@ process_t get_vsh_process(void)
 
 int sys_prx_load_vsh_plugin(unsigned int slot, char *path, void *arg, uint32_t arg_size)
 {
+	#ifdef MAMBA_LOADER
+	if (mamba_loaded == 1) return ECANCELED; //USE MAMBA INSTEAD TO LOAD THEM !
+	#endif
 	if (!vsh_process) vsh_process = get_vsh_process();
-	if (!vsh_process) return -1;
+	if (!vsh_process) return ESRCH;
 	void *kbuf, *vbuf;
 	sys_prx_id_t prx;
 	int ret;
@@ -132,8 +142,11 @@ int sys_prx_load_vsh_plugin(unsigned int slot, char *path, void *arg, uint32_t a
 
 int sys_prx_unload_vsh_plugin(unsigned int slot)
 {
+	#ifdef MAMBA_LOADER
+	if (mamba_loaded == 1) return ECANCELED; //USE MAMBA INSTEAD TO LOAD THEM !
+	#endif
 	if (!vsh_process) vsh_process = get_vsh_process();
-	if (!vsh_process) return -1;
+	if (!vsh_process) return ESRCH;
 	int ret;
 	sys_prx_id_t prx;
 	if (slot >= MAX_VSH_PLUGINS) return EINVAL;
@@ -144,20 +157,42 @@ int sys_prx_unload_vsh_plugin(unsigned int slot)
 	if (ret == 0) vsh_plugins[slot] = 0;
 	return ret;
 }
+#endif
 
 //-----------------------
-//MAMBA/PRX LOADER
+//MAIN
 //-----------------------
+
+#define SYSCALL1022_OPCODE_IS_ENABLED				0x7750
 
 int syscall1022(uint64_t function, uint64_t param1, uint64_t param2, uint64_t param3, uint64_t param4, uint64_t param5, uint64_t param6, uint64_t param7)
 {
 	extend_kstack(0);
+	
 	switch (function)
 	{
+	
+		case SYSCALL1022_OPCODE_IS_ENABLED:
+		#ifdef MAMBA_LOADER
+			#ifdef PRX_LOADER
+				return 0x333; //MAMBA + PRX LOADER
+			#else
+				return 0x222; //MAMBA LOADER ONLY
+			#endif
+		#elif defined PRX_LOADER
+			return 0x111; //PRX LOADER ONLY
+		#else
+			return ENOSYS;
+		#endif
+		break;
+		
+		#ifdef MAMBA_LOADER
 		case SYSCALL1022_OPCODE_LOAD_MAMBA:
 			return sys_load_mamba((char *)param1);
 		break;
+		#endif
 		
+		#ifdef PRX_LOADER
 		case SYSCALL1022_OPCODE_LOAD_VSH_PLUGIN:
 			return sys_prx_load_vsh_plugin((unsigned int)param1, (char *)param2, (void *)param3, (uint32_t)param4);
 		break;
@@ -165,7 +200,10 @@ int syscall1022(uint64_t function, uint64_t param1, uint64_t param2, uint64_t pa
 		case SYSCALL1022_OPCODE_UNLOAD_VSH_PLUGIN:
 			return sys_prx_unload_vsh_plugin((unsigned int)param1);
 		break;
+		#endif
+		
 	}
+	
 	return ENOSYS;
 }
 

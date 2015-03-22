@@ -1,8 +1,9 @@
 #include <lv2/lv2.h>
 #include <lv2/modules.h>
 #include <lv2/thread.h>
+#ifdef DEBUG
 #include <lv2/debug.h>
-
+#endif
 int prx_get_module_name_by_address(process_t process, void *addr, char *name)
 {
 	sys_prx_module_info_t modinfo;
