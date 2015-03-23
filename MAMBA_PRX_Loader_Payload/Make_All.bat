@@ -42,6 +42,7 @@ if exist payload_4_65DEX.bin  move  payload_4_65DEX.bin  payloads\mpl_payload_46
 if exist payload_4_66.bin     move  payload_4_66.bin     payloads\mpl_payload_466C.bin>nul
 if exist payload_4_66DEX.bin  move  payload_4_66DEX.bin  payloads\mpl_payload_466D.bin>nul
 if exist payload_4_70.bin     move  payload_4_70.bin     payloads\mpl_payload_470C.bin>nul
+if exist payload_4_70DEX.bin     move  payload_4_70DEX.bin     payloads\mpl_payload_470D.bin>nul
 
 :copy *.bin ..\datas\*
 

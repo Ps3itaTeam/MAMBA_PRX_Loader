@@ -1,9 +1,6 @@
 clean:
 	rm -f *.o *.elf *.map *.bin payload_src/*.o lv2/src/*.o
 all:
-	make -f Makefile_4.70 clean --no-print-directory
-	make -f Makefile_4.70 --no-print-directory
-	
 	make -f Makefile_3.55 clean --no-print-directory
 	make -f Makefile_3.55 --no-print-directory
 	make -f Makefile_3.55D clean --no-print-directory
@@ -52,4 +49,6 @@ all:
 	make -f Makefile_4.66D --no-print-directory
 	make -f Makefile_4.70 clean --no-print-directory
 	make -f Makefile_4.70 --no-print-directory
+	make -f Makefile_4.70D clean --no-print-directory
+	make -f Makefile_4.70D --no-print-directory
 	rm -f *.o *.elf *.map source/*.o lv2/src/*.o
