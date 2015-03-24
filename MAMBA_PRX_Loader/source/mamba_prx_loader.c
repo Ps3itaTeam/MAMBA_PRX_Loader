@@ -122,7 +122,6 @@ void fix_error()
 uint8_t * read_file(char *path, uint32_t * file_size, uint16_t round)
 {
 	uint8_t * buf;
-	uint32_t size = 0;
 	uint16_t rest;
 	FILE * f = fopen(path, "rb");
 	if(f)
