@@ -55,7 +55,7 @@ VSH plugins:
 
 		-To add or remove VSH plugins it is necessary to edit /dev_hdd0/mamba_plugins.txt
 
-	Load with PRX Loader (only if MAMBA is disabled or unsupported):
+	Load with PRX Loader (only if MAMBA is disabled):
 
 		-To add or remove VSH plugins it is necessary to edit /dev_hdd0/prx_plugins.txt 
 
