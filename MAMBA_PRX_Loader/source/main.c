@@ -27,7 +27,7 @@
 #include "mamba_prx_loader.h"
 #include "lv2_utils.h"
 
-#define VERSION_NAME 	"MAMBA/PRX Loader v2.0.0 by NzV"
+#define VERSION_NAME 	"MAMBA/PRX Loader v2.1.3 by NzV"
 
 #define SC_SYS_POWER 		(379)
 #define SYS_REBOOT			0x8201
@@ -187,6 +187,9 @@ int get_firmware()
 		break;
 		case 0x8000000000375850ULL:
 			return 0x470D;
+		break;
+		case 0x800000000034FBB0ULL:
+			return 0x475C;
 		break;
 	}
 	return 0;

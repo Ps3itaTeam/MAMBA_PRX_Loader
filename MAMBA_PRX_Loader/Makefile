@@ -17,16 +17,12 @@ include $(PSL1GHT)/ppu_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	 source source/payload source/payload/Iris_sky/355 source/payload/Iris_sky/421 source/payload/Iris_sky/430 source/payload/Iris_sky/431 
-SOURCES		+=	 source/payload/Iris_sky/440 source/payload/Iris_sky/441 source/payload/Iris_sky/446 source/payload/Iris_sky/450 source/payload/Iris_sky/453 
-SOURCES		+=	 source/payload/Iris_sky/455 source/payload/Iris_sky/460 source/payload/Iris_sky/465 source/payload/Iris_sky/466 source/payload/Iris_sky/470
+SOURCES		:=	source
 DATA		:=	data
-INCLUDES	:=	 include include/payload include/payload/Iris_sky/355 include/payload/Iris_sky/421 include/payload/Iris_sky/430 include/payload/Iris_sky/431 
-INCLUDES	+=	 include/payload/Iris_sky/440 include/payload/Iris_sky/441 include/payload/Iris_sky/446 include/payload/Iris_sky/450 include/payload/Iris_sky/453 
-INCLUDES	+=	 include/payload/Iris_sky/455 include/payload/Iris_sky/460 include/payload/Iris_sky/465 include/payload/Iris_sky/466 include/payload/Iris_sky/470
+INCLUDES	:=	include
 PKGFILES	:=	$(CURDIR)/pkgfiles
 
-TITLE		:=	MAMBA/PRX Loader (+Autoloader) v2.1.2
+TITLE		:=	MAMBA/PRX Loader (+Autoloader) v2.1.3
 APPID		:=	MAMBAPRXL
 CONTENTID	:=	EP0001-$(APPID)_00-0000000000000000
 

@@ -1,2 +1,1 @@
-
 /dev_hdd0/webftp_server_ps3mapi.sprx
