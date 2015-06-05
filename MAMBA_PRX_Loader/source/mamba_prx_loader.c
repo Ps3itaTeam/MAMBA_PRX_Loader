@@ -23,19 +23,16 @@
 
 int FIRMWARE;
 
-u64 SYSCALL_TABLE;
-u64 HV_START_OFFSET;
+uint64_t SYSCALL_TABLE;
+uint64_t HV_START_OFFSET;
 
-u64 OFFSET_FIX;
-u64 OFFSET_2_FIX;
-u64 OFFSET_FIX_3C;
-u64 OFFSET_FIX_17;
-u64 OFFSET_FIX_2B;
-u64 OFFSET_FIX_2B17;
-u64 OFFSET_FIX_LIC;
-
-uint32_t PAYLOAD_SIZE;
-uint64_t *PAYLOAD; 
+uint64_t OFFSET_FIX;
+uint64_t OFFSET_2_FIX;
+uint64_t OFFSET_FIX_3C;
+uint64_t OFFSET_FIX_17;
+uint64_t OFFSET_FIX_2B;
+uint64_t OFFSET_FIX_2B17;
+uint64_t OFFSET_FIX_LIC;
 
 //----------------------------------------
 //MAMBA/PRX LOADER PAYLOAD
@@ -71,7 +68,7 @@ int syscall_mpl_payload_is_enabled()
 
 void lv1poke( u64 addr, u64 val)
 {
-	if(addr==0) return;
+	if (addr == 0) return;
 	lv2syscall2(9, addr, val);
 }
 
@@ -191,7 +188,7 @@ int load_mamba_prx_loader_payload()
 			if (file_exists(payload_path) != SUCCESS)
 			{
 				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find MAMBA payload file");
+				if (verbose) WriteToLog("Error: Unable to find MAMBA payload file\r\n");
 				#endif
 				return FAILED; 
 			}	
@@ -206,7 +203,7 @@ int load_mamba_prx_loader_payload()
 	if(!payload)
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Error: Unable to read MAMBA/PRX Loader payload file");
+		if (verbose) WriteToLog("Error: Unable to read MAMBA/PRX Loader payload file\r\n");
 		#endif
 		return FAILED; 
 	}
@@ -215,12 +212,12 @@ int load_mamba_prx_loader_payload()
 	if ((dir_exists("/dev_flash/rebug") == SUCCESS) || (dir_exists("/dev_flash/ps3ita") == SUCCESS) )
 	{
 		if((FIRMWARE > 0x355D) && (FIRMWARE < 0x453C)) //No need if not fw 4.xx or 4.53 +
-			{
-				lv1poke(HV_START_OFFSET +  0, 0x0000000000000001ULL);
-				lv1poke(HV_START_OFFSET +  8, 0xe0d251b556c59f05ULL);
-				lv1poke(HV_START_OFFSET + 16, 0xc232fcad552c80d7ULL);
-				lv1poke(HV_START_OFFSET + 24, 0x65140cd200000000ULL); 
-			}
+		{
+			lv1poke(HV_START_OFFSET +  0, 0x0000000000000001ULL);
+			lv1poke(HV_START_OFFSET +  8, 0xe0d251b556c59f05ULL);
+			lv1poke(HV_START_OFFSET + 16, 0xc232fcad552c80d7ULL);
+			lv1poke(HV_START_OFFSET + 24, 0x65140cd200000000ULL); 
+		}
 	}	
 	
 	write_htab();	
@@ -249,7 +246,7 @@ int load_mamba_prx_loader_payload()
 		break;
 		default:
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Error: MAMBA/PRX Loader payload was not loaded");
+			if (verbose) WriteToLog("Error: MAMBA/PRX Loader payload was not loaded\r\n");
 			#endif
 			return FAILED; 
 		break;
@@ -300,7 +297,7 @@ int load_mamba()
 					if (file_exists(payload_path) != SUCCESS)
 					{
 							#ifdef ENABLE_LOG
-							if (verbose) WriteToLog("Error: Unable to find MAMBA payload file");
+							if (verbose) WriteToLog("Error: Unable to find MAMBA payload file\r\n");
 							#endif
 					}	
 				}
@@ -313,7 +310,7 @@ int load_mamba()
 		break;
 		default:
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Error: MAMBA Loader payload not loaded");
+			if (verbose) WriteToLog("Error: MAMBA Loader payload not loaded\r\n");
 			#endif
 			return FAILED; 
 		break;
@@ -411,7 +408,7 @@ int load_vsh_plugins()
 	if(is_mamba() == SUCCESS)
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Success: MAMBA detected");
+		if (verbose) WriteToLog("Success: MAMBA detected\r\n");
 		#endif
 		return load_all_prx(VSH_PLUGINS_PATH_MAMBA, 8);
 	}
@@ -422,13 +419,13 @@ int load_vsh_plugins()
 			case IS_PRX_LOADER_PAYLOAD:
 			case IS_MAMBA_PRX_LOADER_PAYLOAD:
 				#ifdef ENABLE_LOG
-				if (verbose)  WriteToLog("Success: PRX Loader detected");
+				if (verbose)  WriteToLog("Success: PRX Loader detected\r\n");
 				#endif
 				return load_all_prx(VSH_PLUGINS_PATH_PRX, MAMBA_PRX_LOADER_SYSCALL_NUM);
 			break;
 			default:
 				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: PRX Loader not found");
+				if (verbose) WriteToLog("Error: PRX Loader not found\r\n");
 				#endif
 				return FAILED; 
 			break;
@@ -804,14 +801,14 @@ int get_firmware_info()
 int mamba_prx_loader(int mamba_off, int noplugins)
 {
 	#ifdef ENABLE_LOG
-	if (verbose)  WriteToLog("[MAMBA/PRX LOADER]");
+	if (verbose)  WriteToLog("[MAMBA/PRX LOADER]\r\n");
 	#endif
 	
 	//FW INIT
 	if (get_firmware_info() != SUCCESS )
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Error: Unsupported FIRMWARE");
+		if (verbose) WriteToLog("Error: Unsupported FIRMWARE\r\n");
 		#endif
 		return FAILED;
 	
@@ -821,7 +818,7 @@ int mamba_prx_loader(int mamba_off, int noplugins)
 	if (load_mamba_prx_loader_payload() == SUCCESS)
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Success: MAMBA/PRX Loader payload loaded");
+		if (verbose) WriteToLog("Success: MAMBA/PRX Loader payload loaded\r\n");
 		#endif
 	}
 	else return FAILED;
@@ -832,12 +829,12 @@ int mamba_prx_loader(int mamba_off, int noplugins)
     if(file_exists("/dev_usb000/core_flags/mamba_off")==0) mamba_off = 1;
 	else if(file_exists("/dev_usb001/core_flags/mamba_off")==0) mamba_off = 1;
 	else if(file_exists("/dev_hdd0/tmp/core_flags/mamba_off")==0) mamba_off = 1;
-	if (mamba_off && verbose) WriteToLog("Success: Flag mamba_off detected");	
+	if (mamba_off && verbose) WriteToLog("Success: Flag mamba_off detected\r\n");	
 	//FLAG VSH Plugins
 	if(file_exists("/dev_usb000/core_flags/noplugins")==0) noplugins = 1;
 	else if(file_exists("/dev_usb001/core_flags/noplugins")==0) noplugins = 1;
 	else if(file_exists("/dev_hdd0/tmp/core_flags/noplugins")==0) noplugins = 1;	
-	if (noplugins && verbose) WriteToLog("Success: Flag noplugins detected");
+	if (noplugins && verbose) WriteToLog("Success: Flag noplugins detected\r\n");
 	#endif
 	
 	//LOAD MAMBA
@@ -849,7 +846,7 @@ int mamba_prx_loader(int mamba_off, int noplugins)
 		if (load_mamba() == SUCCESS)
 		{
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Success: MAMBA payload loaded");
+			if (verbose) WriteToLog("Success: MAMBA payload loaded\r\n");
 			#endif
 		}
 		else
@@ -863,7 +860,7 @@ int mamba_prx_loader(int mamba_off, int noplugins)
 	if (!noplugins)
 	{
 		#ifdef ENABLE_LOG
-		if (verbose)  WriteToLog("[VSH PLUGINS]");
+		if (verbose)  WriteToLog("[VSH PLUGINS]\r\n");
 		#endif
 		load_vsh_plugins();
 	}
@@ -872,7 +869,7 @@ int mamba_prx_loader(int mamba_off, int noplugins)
 	if (unload_mamba_prx_loader_payload() == SUCCESS)
 		{
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Success: MAMBA/PRX Loader payload unloaded");
+			if (verbose) WriteToLog("Success: MAMBA/PRX Loader payload unloaded\r\n");
 			#endif
 		}
 		
