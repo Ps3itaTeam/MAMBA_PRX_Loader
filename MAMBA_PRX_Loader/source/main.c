@@ -1,16 +1,16 @@
 /*
 	==============================================================
-	
+
 	MAMBA/PRX loader By NzV
-	
+
 	Load of MAMBA and/or VSH plugins (with MAMBA or PRX Loader) after system boot.
 
 	==============================================================
-	
+
 	==============================================================
-	
+
 	MAMBA/PRX Autoloader By NzV
-	
+
 	Load of MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot.
 
 	==============================================================
@@ -27,7 +27,7 @@
 #include "mamba_prx_loader.h"
 #include "lv2_utils.h"
 
-#define VERSION_NAME 	"MAMBA/PRX Loader v2.1.3 by NzV"
+#define VERSION_NAME 	"MAMBA/PRX Loader v2.1.4 by NzV"
 
 #define SC_SYS_POWER 		(379)
 #define SYS_REBOOT			0x8201
@@ -42,7 +42,7 @@
 //MAMBA/PRX AUTOLOADER
 //----------------------------------------
 
-#define PATH_SYS_INI_OSD 		"/dev_blind/sys/internal/sys_init_osd.self" 
+#define PATH_SYS_INI_OSD 		"/dev_blind/sys/internal/sys_init_osd.self"
 #define PATH_SYS_INI_OSD_ORIG 	"/dev_blind/sys/internal/sys_init_osd_orig.self"
 #define PATH_SYS_INI_OSD_NEW 	"/dev_hdd0/game/MAMBAPRXL/USRDIR/NewCore/sys_init_osd.self"
 #define PATH_DIR_PAYLOAD 		"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/"
@@ -174,13 +174,14 @@ int get_firmware()
 		case 0x800000000034F950ULL:
 			return 0x460C;
 		break;
+		case 0x8000000000375500ULL:
+			return 0x460D;
+		break;
 		case 0x800000000034F960ULL:
-			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466C;
-			else return 0x465C;
+			return (lv2peek(0x80000000002FC938ULL)==0x323031342F31312FULL) ? 0x466C : 0x465C;
 		break;
 		case 0x8000000000375510ULL:
-			if(lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) return 0x466D;
-			else return 0x465D;
+			return (lv2peek(0x800000000031EBA8ULL)==0x323031342F31312FULL) ? 0x466D : 0x465D;
 		break;
 		case 0x800000000034FB10ULL:
 			return 0x470C;
@@ -189,30 +190,32 @@ int get_firmware()
 			return 0x470D;
 		break;
 		case 0x800000000034FBB0ULL:
-			return 0x475C;
+			return (lv2peek(0x80000000002FCB68ULL)==0x323031352F30382FULL) ? 0x476C : 0x475C;
+		case 0x80000000003758E0ULL:
+			return (lv2peek(0x800000000031EF48ULL)==0x323031352F30382FULL) ? 0x476D : 0x475D;
 		break;
 	}
 	return 0;
 }
 
 int run_uninstall_autoloader()
-{	
+{
 		#ifdef ENABLE_LOG
 		if (verbose) WriteToLog("[UNINSTALLER]");
-		#endif 
+		#endif
 		//Check if installed
-		if(file_exists("/dev_flash/sys/internal/sys_init_osd_orig.self") != SUCCESS)  
+		if(file_exists("/dev_flash/sys/internal/sys_init_osd_orig.self") != SUCCESS)
 		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: sys_init_osd_orig.self not found\r\n");
-			#endif 
+			#endif
 			return FAILED;
 		}
 		//Enable dev_blind
 		if(dir_exists("/dev_blind") != SUCCESS)
 		{
 			{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }
-		}	
+		}
 		//Restore original sys_init_osd.self
 		if(file_exists(PATH_SYS_INI_OSD_ORIG) == SUCCESS)
 		{
@@ -222,7 +225,8 @@ int run_uninstall_autoloader()
 				sysLv2FsRename(PATH_SYS_INI_OSD_ORIG, PATH_SYS_INI_OSD);
 				//Remove payload
 				char filename[128];
-				int fw_list[32] = {0x355C,0x421C,0x430C,0x431C,0x440C,0x441C,0x446C,0x450C,0x453C,0x455C,0x460C,0x465C,0x466C,0x470C,0x355D,0x421D,0x430D,0x441D,0x446D,0x450D,0x453D,0x455D,0x465D,0x466D,0x470D};
+				int fw_list[32] = { 0x355C,0x421C,0x430C,0x431C,0x440C,0x441C,0x446C,0x450C,0x453C,0x455C,0x460C,0x465C,0x466C,0x470C,0x475C,0x476C,
+									0x355D,0x421D,0x430D,              0x441D,0x446D,0x450D,0x453D,0x455D,0x460D,0x465D,0x466D,0x470D,0x475D,0x476D};
 				int i;
 				for (i = 0; i < 32; i++)
 				{
@@ -237,16 +241,16 @@ int run_uninstall_autoloader()
 				#endif
 				return SUCCESS;
 			}
-			else  
-			{ 
+			else
+			{
 				#ifdef ENABLE_LOG
 				if (verbose) WriteToLog("Error: sys_init_osd.self not found\r\n");
 				#endif
 				return FAILED;
 			}
 		}
-		else  
-		{ 
+		else
+		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: /dev_blind not mounted\r\n");
 			#endif
@@ -255,48 +259,48 @@ int run_uninstall_autoloader()
 }
 
 int run_install_autoloader()
-{	
+{
 		//Init FW
 		int firmware = get_firmware();
 		#ifdef ENABLE_LOG
 		if (verbose) {WriteToLog(PATH_SYS_INI_OSD_NEW); WriteToLog("\r\n");}
-		#endif 
+		#endif
 		if(file_exists(PATH_SYS_INI_OSD_NEW) != SUCCESS)
-		{ 
+		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
-			#endif 
+			#endif
 			return FAILED;
 		}
 		char filename_mpl_payload[256];
 		sprintf (filename_mpl_payload, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware);
 		#ifdef ENABLE_LOG
 		if (verbose) {WriteToLog(filename_mpl_payload); WriteToLog("\r\n");}
-		#endif 
+		#endif
 		if(file_exists(filename_mpl_payload) != SUCCESS)
-		{ 
+		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
-			#endif 
+			#endif
 			return FAILED;
 		}
 		char filename_mamba_payload[256];
 		sprintf (filename_mamba_payload, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware);
 		#ifdef ENABLE_LOG
 		if (verbose) {WriteToLog(filename_mamba_payload); WriteToLog("\r\n");}
-		#endif 
+		#endif
 		if(file_exists(filename_mamba_payload) != SUCCESS)
-		{ 
+		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
-			#endif 
+			#endif
 			return FAILED;
 		}
 		//Uninstall New_Core
 		run_uninstall_autoloader();
 		#ifdef ENABLE_LOG
 		if (verbose) WriteToLog("[INSTALLER]");
-		#endif 
+		#endif
 		//Enable dev_blind
 		if(file_exists(PATH_SYS_INI_OSD) != SUCCESS)
 			{{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }}
@@ -322,10 +326,10 @@ int run_install_autoloader()
 				if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt") == SUCCESS)  && (file_exists(VSH_PLUGINS_PATH_PRX) != SUCCESS))
 				{
 					CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt", VSH_PLUGINS_PATH_PRX);
-				}	
+				}
 			}
-			else  
-			{ 
+			else
+			{
 				#ifdef ENABLE_LOG
 				if (verbose) WriteToLog("Error: sys_init_osd.self not found (/dev_blind not mounted?)\r\n");
 				#endif
@@ -334,7 +338,7 @@ int run_install_autoloader()
 			return SUCCESS;
 		}
 		else
-		{ 
+		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: sys_init_osd_orig.self already exist\r\n");
 			#endif
@@ -352,7 +356,7 @@ int mamba_off = 0;
 int noplugins = 0;
 
 int main()
-{	
+{
 	#ifdef ENABLE_LOG
 	verbose = 1;
 	Open_Log(LOG_PATH);
@@ -384,15 +388,15 @@ int main()
 		case BUTTON_CROSS:
 			install_autoloader=1;
 		break;
-		
+
 		case BUTTON_SQUARE:
 			uninstall_autoloader=1;
 		break;
-		
+
 		case BUTTON_R1:
 			noplugins=1;
 		break;
-		
+
 		case BUTTON_L1:
 			mamba_off=1;
 		break;
@@ -401,10 +405,10 @@ int main()
 	if(install_autoloader)
 	{
 		if (run_install_autoloader() ==  SUCCESS)
-		{	
+		{
 			#ifdef ENABLE_LOG
 			CloseLog();
-			#endif	
+			#endif
 			{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
 			sysLv2FsUnlink("/dev_hdd0/tmp/turnoff");
 			{lv2syscall3(SC_SYS_POWER, SYS_REBOOT, 0, 0);} // Reboot
@@ -419,10 +423,10 @@ int main()
 	else if(uninstall_autoloader)
 	{
 		if (run_uninstall_autoloader() ==  SUCCESS)
-		{	
+		{
 			#ifdef ENABLE_LOG
 			CloseLog();
-			#endif	
+			#endif
 			{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
 			sysLv2FsUnlink("/dev_hdd0/tmp/turnoff");
 			{lv2syscall3(SC_SYS_POWER, SYS_REBOOT, 0, 0);} // Reboot
@@ -435,18 +439,18 @@ int main()
 	}
 	//Run MAMBA/PRX Loader
 	else if ( mamba_prx_loader(mamba_off, noplugins) ==  SUCCESS)
-	{	
+	{
 		#ifdef ENABLE_LOG
 		CloseLog();
-		#endif	
+		#endif
 		{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
 		return SUCCESS; //Get back to xmb
 	}
 	//Error get back to xmb
-err_back_to_xmb:	
+err_back_to_xmb:
     #ifdef ENABLE_LOG
 	CloseLog();
-	#endif	
+	#endif
 	{lv2syscall3(392, 0x1004, 0xa, 0x1b6); } //3 Beep
 	return FAILED; //Get back to xmb
 }

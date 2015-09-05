@@ -9,7 +9,7 @@
 
 #define FS_S_IFMT 0170000
 
-#define VERSION_NAME "MAMBA/PRX Autoloader v2.1.2 by NzV"
+#define VERSION_NAME "MAMBA/PRX Autoloader v2.1.4 by NzV"
 
 //----------------------------------------
 //LOG
@@ -54,11 +54,11 @@ int Open_Log(char *file)
         if(WriteToLog(VERSION_NAME)!=SUCCESS) {CloseLog(); return FAILED;}
         WriteToLog("-----[LOG]-----");
         return SUCCESS;
-    } 
+    }
     fd_log = -1;
 	verbose = 0;
     return FAILED;
-    
+
 }
 
 #endif
@@ -119,7 +119,7 @@ int dir_exists(const char *path)
 }
 
 int unlink_secure(void *path)
-{	
+{
     if(file_exists(path)==SUCCESS)
 	{
         sysLv2FsChmod(path, FS_S_IFMT | 0777);
@@ -134,9 +134,9 @@ int unlink_secure(void *path)
 
 
 int sys_shutdown()
-{   
+{
     unlink_secure("/dev_hdd0/tmp/turnoff");
-    
+
     lv2syscall4(379,0x1100,0,0,0);
     return_to_user_prog(int);
 }
