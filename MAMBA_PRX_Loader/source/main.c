@@ -27,11 +27,16 @@
 #include "mamba_prx_loader.h"
 #include "lv2_utils.h"
 
-#define VERSION_NAME 	"MAMBA/PRX Loader v2.1.4 by NzV"
+#define VERSION_NAME 	"MAMBA/PRX Loader v2.1.5 by NzV"
 
 #define SC_SYS_POWER 		(379)
 #define SYS_REBOOT			0x8201
 #define SC_FS_MOUNT  		(837)
+#define SC_RING_BUZZER		(392)
+
+#define BEEP1 { lv2syscall3(SC_RING_BUZZER, 0x1004, 0x4,   0x6); }
+#define BEEP2 { lv2syscall3(SC_RING_BUZZER, 0x1004, 0x7,  0x36); }
+#define BEEP3 { lv2syscall3(SC_RING_BUZZER, 0x1004, 0xa, 0x1b6); }
 
 #define BUTTON_SQUARE     	128
 #define BUTTON_CROSS      	64
@@ -409,7 +414,7 @@ int main()
 			#ifdef ENABLE_LOG
 			CloseLog();
 			#endif
-			{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
+			{ BEEP1 } //1 Beep
 			sysLv2FsUnlink("/dev_hdd0/tmp/turnoff");
 			{lv2syscall3(SC_SYS_POWER, SYS_REBOOT, 0, 0);} // Reboot
 			return SUCCESS;
@@ -427,7 +432,7 @@ int main()
 			#ifdef ENABLE_LOG
 			CloseLog();
 			#endif
-			{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
+			{ BEEP1 } //1 Beep
 			sysLv2FsUnlink("/dev_hdd0/tmp/turnoff");
 			{lv2syscall3(SC_SYS_POWER, SYS_REBOOT, 0, 0);} // Reboot
 			return SUCCESS;
@@ -443,7 +448,7 @@ int main()
 		#ifdef ENABLE_LOG
 		CloseLog();
 		#endif
-		{lv2syscall3(392, 0x1004, 0x4, 0x6); } //1 Beep
+		{ BEEP1 } //1 Beep
 		return SUCCESS; //Get back to xmb
 	}
 	//Error get back to xmb
@@ -451,7 +456,7 @@ err_back_to_xmb:
     #ifdef ENABLE_LOG
 	CloseLog();
 	#endif
-	{lv2syscall3(392, 0x1004, 0xa, 0x1b6); } //3 Beep
+	{ BEEP3 } //3 Beep
 	return FAILED; //Get back to xmb
 }
 

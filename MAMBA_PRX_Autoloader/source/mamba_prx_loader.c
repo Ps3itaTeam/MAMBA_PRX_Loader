@@ -51,12 +51,23 @@ uint64_t *PAYLOAD;
 #define MPL_PAYLOAD_PATH_2							"/dev_usb001/MAMBAPRXL/mpl_payload_%X.bin"
 
 #ifdef USING_NEW_CORE
-#define MAMBA_PAYLOAD_PATH_3						"/dev_flash/sys/internal/mamba_%X.bin"
-#define MPL_PAYLOAD_PATH_3							"/dev_flash/sys/internal/mpl_payload_%X.bin"
+
+	#define MAMBA_PAYLOAD_PATH_3					"/dev_flash/sys/internal/mamba_%X.bin"
+	#define MPL_PAYLOAD_PATH_3						"/dev_flash/sys/internal/mpl_payload_%X.bin"
+
+	#define MAMBA_PAYLOAD_PATH_4					"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mamba_%X.bin"
+	#define MPL_PAYLOAD_PATH_4						"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mpl_payload_%X.bin"
+
 #else
-#define MAMBA_PAYLOAD_PATH_3						"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mamba_%X.bin"
-#define MPL_PAYLOAD_PATH_3							"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mpl_payload_%X.bin"
+
+	#define MAMBA_PAYLOAD_PATH_3					"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mamba_%X.bin"
+	#define MPL_PAYLOAD_PATH_3						"/dev_hdd0/game/MAMBAPRXL/USRDIR/payloads/mpl_payload_%X.bin"
+
+	#define MAMBA_PAYLOAD_PATH_4					"/dev_hdd0/game/IRISMAN00/USRDIR/mamba/mamba_%X.bin"
+	#define MPL_PAYLOAD_PATH_4						"/dev_hdd0/game/IRISMAN00/USRDIR/payloads/payload_%X.bin"
+
 #endif
+
 
 #define IS_MAMBA_PRX_LOADER_PAYLOAD 				0x333
 #define IS_MAMBA_LOADER_PAYLOAD 					0x222
@@ -190,10 +201,14 @@ int load_mamba_prx_loader_payload()
 			sprintf(payload_path, MPL_PAYLOAD_PATH_3, FIRMWARE);
 			if (file_exists(payload_path) != SUCCESS)
 			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find MAMBA payload file");
-				#endif
-				return FAILED;
+				sprintf(payload_path, MPL_PAYLOAD_PATH_4, FIRMWARE);
+				if (file_exists(payload_path) != SUCCESS)
+				{
+					#ifdef ENABLE_LOG
+					if (verbose) WriteToLog("Error: Unable to find MAMBA payload file");
+					#endif
+					return FAILED;
+				}
 			}
 		}
 	}
@@ -214,7 +229,7 @@ int load_mamba_prx_loader_payload()
 	//Patch lv2 protection (rebug only, ps3ita?)
 	if ((dir_exists("/dev_flash/rebug") == SUCCESS) || (dir_exists("/dev_flash/ps3ita") == SUCCESS) )
 	{
-		if((FIRMWARE > 0x355D) && (FIRMWARE < 0x453C)) //No need if not fw 4.xx or 4.53 +
+		if(HV_START_OFFSET && (FIRMWARE > 0x355D) && (FIRMWARE < 0x453C)) //No need if not fw 4.xx or 4.53 +
 			{
 				lv1poke(HV_START_OFFSET +  0, 0x0000000000000001ULL);
 				lv1poke(HV_START_OFFSET +  8, 0xe0d251b556c59f05ULL);
@@ -299,9 +314,13 @@ int load_mamba()
 					sprintf(payload_path, MAMBA_PAYLOAD_PATH_3, FIRMWARE);
 					if (file_exists(payload_path) != SUCCESS)
 					{
+						sprintf(payload_path, MAMBA_PAYLOAD_PATH_4, FIRMWARE);
+						if (file_exists(payload_path) != SUCCESS)
+						{
 							#ifdef ENABLE_LOG
 							if (verbose) WriteToLog("Error: Unable to find MAMBA payload file");
 							#endif
+						}
 					}
 				}
 			}
