@@ -9,7 +9,7 @@
 
 #define FS_S_IFMT 0170000
 
-#define VERSION_NAME "MAMBA/PRX Autoloader v2.1.4 by NzV"
+#define VERSION_NAME "MAMBA/PRX Autoloader Unofficial v3.0.0 (forked from NzV)\n"
 
 //----------------------------------------
 //LOG
@@ -38,8 +38,8 @@ int WriteToLog(char *str)
 
 void CloseLog()
 {
-	if (verbose) WriteToLog("-----[END]-----");
-    if (verbose) WriteToLog("---[By NzV]---");
+	if (verbose) WriteToLog("-----[END]-----\r\n");
+    if (verbose) WriteToLog("---[By NzV]---\r\n");
 	verbose = 0;
 	if(fd_log >= 0) sysLv2FsClose(fd_log);
     fd_log = -1;
@@ -52,7 +52,7 @@ int Open_Log(char *file)
 	{
         sysLv2FsChmod(file, FS_S_IFMT | 0777);
         if(WriteToLog(VERSION_NAME)!=SUCCESS) {CloseLog(); return FAILED;}
-        WriteToLog("-----[LOG]-----");
+        WriteToLog("-----[LOG]-----\r\n");
         return SUCCESS;
     }
     fd_log = -1;

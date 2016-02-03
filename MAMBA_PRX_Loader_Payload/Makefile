@@ -61,4 +61,8 @@ all:
 	make -f Makefile_4.76 --no-print-directory
 	make -f Makefile_4.76D clean --no-print-directory
 	make -f Makefile_4.76D --no-print-directory
+	make -f Makefile_4.78 clean --no-print-directory
+	make -f Makefile_4.78 --no-print-directory
+	make -f Makefile_4.78D clean --no-print-directory
+	make -f Makefile_4.78D --no-print-directory
 	rm -f *.o *.elf *.map source/*.o lv2/src/*.o

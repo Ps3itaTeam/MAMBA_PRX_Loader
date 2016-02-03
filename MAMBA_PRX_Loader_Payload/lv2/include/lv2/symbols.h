@@ -439,38 +439,7 @@
 	#define cellFsClose_symbol				0x2976F0 // bytes matched: 0x10  F821FF617C0802A6FBC10090EBC225B0
 	#define cellFsRead_symbol				0x29782C // bytes matched: 0x34  2C2600007C0802A63D208001F821FF71FBE10080F80100A07CDF33786129000D
 	#define cellFsStat_symbol				0x2970A4 // bytes matched: 0x18  F821FF617C0802A6FB610078FBA10088FBC100907C7D1B78
-#elif defined(FIRMWARE_4_75)
-	#define TOC								0x34FBB0 //done
-	#define copy_from_user_symbol			0xFA88 // bytes matched: 0x64  2C2500007C0802A6F821FF71FBA10078FBC10080FBE10088FB8100707C7F1B78
-	#define copy_from_process_symbol		0xF734 // bytes matched: 0x80  F821FF417C0802A62C240000FB6100983F608001FB210088FB8100A0FB010080
-	#define page_allocate_symbol			0x60394 // bytes matched: 0x60  7C8023787CA92B787CCB33787CE83B787C641B787C0503787D264B787D675B78
-	#define page_free_symbol				0x5FDF8 // bytes matched: 0x80  E9629C987C0802A6F821FF61F80100B0FBC10090FBE10098E92B00007C7F1B78
-	#define page_export_to_proc_symbol		0x60530 // bytes matched: 0x80  F821FF717C0802A63D20000CF80100A054A0031AFBE100887FA048003D208001
-	#define page_unexport_from_proc_symbol	0x5FCEC // bytes matched: 0x80  E8630030480110882BA3003C7C0802A6F821FF91F80100807C8B23787C601B78
-	#define sprintf_symbol					0x4EA94 // bytes matched: 0x80  F821FF817C0802A6F8A100C0F8010090380100C0E8A295A8F8C100C8F8610078
-	#define snprintf_symbol					0x4EA00 // bytes matched: 0x80  F821FF717C0802A6F8C100D8F80100A0380100D8F8610078908100807CA32B78
-	#define strcmp_symbol					0x4D7C4 // bytes matched: 0x80  880300007C691B78896400007F8B00007C0B0050409E002C2F8B0000409E000C
-	#define ppu_thread_join_symbol			0x13FD4 // bytes matched: 0x80  F821FF617C0802A6FB810080F80100B0FBA10088FBC100907C7D1B78FBE10098
-	#define create_user_thread2_symbol		0x25080 // bytes matched: 0x80  F821FEF17C0802A6FA8100B0F8010120800900287CD43378FAA100B8FAC100C0
-	#define start_thread_symbol				0x23D4C // bytes matched: 0x80  7D800026F821FF61FB410070FB610078FB810080FBA10088FBC10090FBE10098
-	#define run_thread_symbol				0x2357C // bytes matched: 0x30  7C641B78E863004848002EB0F821FF717C0802A6FBC100807C7E1B78FBA10078
-	#define register_thread_symbol			0x26794C // bytes matched: 0x80  7D800026F821FF712C240000FBC10080FBE10088FBA100787C9F23787C7E1B78
-	#define allocate_user_stack_symbol		0x268134 // bytes matched: 0x50  F821FF617C0802A6FBA10088F80100B0E803003038C10070FBC100902FA00000
-	#define deallocate_user_stack_symbol	0x26809C // bytes matched: 0x38  F821FF717C0802A6FBA10078F80100A0E80300307CBD2B78FBC100802FA00000
-	#define prx_load_module_symbol			0x88C04 // bytes matched: 0x80  F821FF717C0802A6FB8100707CBC2B7838A00001FBA10078FBC10080FBE10088
-	#define prx_start_module_symbol			0x878D0 // bytes matched: 0x80  7D800026F821FEF1FB2100D8FB4100E07C7907B47C9A2378FB0100D0FB8100F0
-	#define prx_stop_module_symbol			0x88CA8 // bytes matched: 0x80  F821FF617C0802A6FBA10088FBC100907C7D1B787C9E2378FB810080F80100B0
-	#define prx_unload_module_symbol		0x87604 // bytes matched: 0x80  F821FF617C0802A6FB810080FBC100907C7C07B47C9E2378FBA10088FBE10098
-	#define extend_kstack_symbol			0x700A4 // bytes matched: 0x44  F821FF717C0802A6FB810070F80100A0FBA100787C7D1B784BFB6131E922A138
-	#define syscall_table_symbol			0x363BE0 //done
-	#define process_rtoc_entry_1			-0x7800 //found at 0x1A157 88003FC0800163DE0005E87D0000
-	#define alloc_symbol					0x64824 // bytes matched: 0x80  2C2300007C85237838C000007C641B784D820020E9229EC8E86900004BFFFEB8
-	#define dealloc_symbol					0x64C60 // bytes matched: 0x80  E9229EC87C85237838C000007C641B78E86900004BFFFBD0F821FF717C0802A6
-	#define cellFsOpen_symbol				0x297900 // bytes matched: 0x1C  F821FF517C0802A6FB010070FB610088FBA10098FBC100A07C7D1B78
-	#define cellFsClose_symbol 				0x297768 // old: 0x296B18
-	#define cellFsRead_symbol				0x2978A4 // bytes matched: 0x34  2C2600007C0802A63D208001F821FF71FBE10080F80100A07CDF33786129000D
-	#define cellFsStat_symbol				0x29711C // bytes matched: 0x18  F821FF617C0802A6FB610078FBA10088FBC100907C7D1B78
-#elif defined(FIRMWARE_4_76)
+#elif defined(FIRMWARE_4_75) || defined(FIRMWARE_4_76) || defined(FIRMWARE_4_78)
 	#define TOC								0x34FBB0 //done
 	#define copy_from_user_symbol			0xFA88 // bytes matched: 0x64  2C2500007C0802A6F821FF71FBA10078FBC10080FBE10088FB8100707C7F1B78
 	#define copy_from_process_symbol		0xF734 // bytes matched: 0x80  F821FF417C0802A62C240000FB6100983F608001FB210088FB8100A0FB010080
@@ -867,7 +836,7 @@
 	#define cellFsClose_symbol				0x2B25B0 // bytes matched: 0x10  F821FF617C0802A6FBC10090EBC225B0
 	#define cellFsRead_symbol				0x2B26EC // bytes matched: 0x34  2C2600007C0802A63D208001F821FF71FBE10080F80100A07CDF33786129000D
 	#define cellFsStat_symbol				0x2B1F64 // bytes matched: 0x18  F821FF617C0802A6FB610078FBA10088FBC100907C7D1B78
-#elif defined(FIRMWARE_4_75DEX) // Ported by Joonie, special thanks to @aldostools for his awesome Getsymbol tool!!!!
+#elif defined(FIRMWARE_4_75DEX) ||  defined(FIRMWARE_4_76DEX) || defined(FIRMWARE_4_78DEX)// Ported by Joonie, special thanks to @aldostools for his awesome Getsymbol tool!!!!
     #define TOC                             0x3758E0 //done
     #define copy_from_user_symbol           0x100D0
     #define copy_from_process_symbol        0xFD7C
@@ -899,37 +868,6 @@
     #define cellFsClose_symbol              0x2B2628
     #define cellFsRead_symbol               0x2B2764 // bytes matched: 0x34  2C2600007C0802A63D208001F821FF71FBE10080F80100A07CDF33786129000D
     #define cellFsStat_symbol               0x2B1FDC // bytes matched: 0x18  F821FF617C0802A6FB610078FBA10088FBC100907C7D1B78
-#elif defined(FIRMWARE_4_76DEX) // Ported by Joonie, special thanks to @aldostools for his awesome Getsymbol tool!!!!
-    #define TOC                             0x3758E0 //done
-    #define copy_from_user_symbol           0x100D0
-    #define copy_from_process_symbol        0xFD7C
-    #define page_allocate_symbol            0x63D64
-    #define page_free_symbol                0x637C4
-    #define page_export_to_proc_symbol      0x63F00
-    #define page_unexport_from_proc_symbol  0x636BC
-    #define printf_symbol                   0x278978
-    #define sprintf_symbol                  0x5243C
-    #define snprintf_symbol                 0x523A8
-    #define strcmp_symbol                   0x5116C
-    #define ppu_thread_join_symbol          0x14708
-    #define create_user_thread2_symbol      0x26D30
-    #define start_thread_symbol             0x25868
-    #define run_thread_symbol               0x2502C
-    #define register_thread_symbol          0x26E270
-    #define allocate_user_stack_symbol      0x26EA58
-    #define deallocate_user_stack_symbol    0x26E9C0
-    #define prx_load_module_symbol          0x8D308
-    #define prx_start_module_symbol         0x8BFD4
-    #define prx_stop_module_symbol          0x8D3AC
-    #define prx_unload_module_symbol        0x8BD08
-    #define extend_kstack_symbol            0x73BF4
-    #define process_rtoc_entry_1            -0x77A0
-    #define syscall_table_symbol            0x38A3E8
-    #define alloc_symbol                    0x681F4 // bytes matched: 0x80  2C2300007C85237838C000007C641B784D820020E9229FA8E86900004BFFFEB8
-    #define dealloc_symbol                  0x68630 // bytes matched: 0x50  E9229FA87C85237838C000007C641B78E86900004BFFFBD0F821FF717C0802A6
-    #define cellFsOpen_symbol               0x2B27C0 // bytes matched: 0x1C  F821FF517C0802A6FB010070FB610088FBA10098FBC100A07C7D1B78
-    #define cellFsClose_symbol              0x2B2628
-    #define cellFsRead_symbol               0x2B2764 // bytes matched: 0x34  2C2600007C0802A63D208001F821FF71FBE10080F80100A07CDF33786129000D
-    #define cellFsStat_symbol               0x2B1FDC // bytes matched: 0x18  F821FF617C0802A6FB610078FBA10088FBC100907C7D1B78
+
 #endif
 #endif /* __FIRMWARE_SYMBOLS_H_S__ */

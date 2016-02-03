@@ -1,7 +1,9 @@
 /*
 	==============================================================
 
-	MAMBA/PRX Autoloader (c) 2015 NzV
+	Unofficial MAMBA/PRX Autoloader by Ps3ita Team
+	
+	Original Author (c) 2015 NzV
 
 	Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core.
 
@@ -11,9 +13,14 @@
 	===============================
 				[FLAGS]
 	===============================
+	Lv2 kernel DEX is slower to mount /dev_usb than the CEX one, is take 13 seconds
+    but you can't wait 13 seconds after than a lv2 soft reboot is done, because it loaded the xmb faster and
+    you can't intercept the hash of sprxs and patch it.
+    For this the new_core look first if the flag "/dev_hdd/tmp/core_flags/nousb" exist and only if it is not found load the flags from USB.
+    NOTE: the file "/dev_hdd/tmp/core_flags/nousb" is automatically created from MAMBA_PRX_Loader.
 
 	Flags can be placed in /dev_usb000/core_flags/ or /dev_usb001/core_flags/ or /dev_hdd0/tmp/core_flags/
-
+	"nousb"			Don't load flags from USB (obviously this only work if placed in /dev_hdd0/tmp/core_flags/)
 	"failsafe"  	Start in normal mode (MAMBA and VSH plugins not loaded)
 	"mamba_off"   	Don't load  MAMBA (PRX Loader will be used instead of MAMBA to load VSH plugins)
 	"noplugins"   	Don't load  VSH plugins at boot
@@ -52,6 +59,7 @@
 #include <string.h>
 #include <ppu-lv2.h>
 #include <sys/systime.h>
+#include <sys/file.h>
 
 #include "common.h"
 #include "lv2_utils.h"
@@ -109,12 +117,19 @@ int try_mount_usb0()
 
 int failsafe = 0;
 
+char s[64];
+
 void InitFlag()
 {
 	failsafe = verbose = 0;
 	#ifdef ENABLE_LOG
 	//Flag Verbose
-    if(file_exists("/dev_usb000/core_flags/verbose")==0)
+	if(file_exists("/dev_hdd0/tmp/core_flags/verbose")==0)
+	{
+        verbose = 1;
+		Open_Log("/dev_hdd0/tmp/new_core.log");
+    }
+    else if(file_exists("/dev_usb000/core_flags/verbose")==0)
 	{
         verbose = 1;
 		Open_Log("/dev_usb000/new_core.log");
@@ -124,19 +139,16 @@ void InitFlag()
         verbose = 1;
 		Open_Log("/dev_usb001/new_core.log");
     }
-	else if(file_exists("/dev_usb001/core_flags/verbose")==0)
-	{
-        verbose = 1;
-		Open_Log("/dev_hdd0/tmp/new_core.log");
-    }
+
 	#endif
 	//Flag Failsafe
-    if(file_exists("/dev_usb000/core_flags/failsafe")==0) failsafe = 1;
+	if(file_exists("/dev_hdd0/tmp/core_flags/failsafe")==0) failsafe = 1;
+    else if(file_exists("/dev_usb000/core_flags/failsafe")==0) failsafe = 1;
 	else if(file_exists("/dev_usb001/core_flags/failsafe")==0) failsafe = 1;
-	else if(file_exists("/dev_hdd0/tmp/core_flags/failsafe")==0) failsafe = 1;
 	//Log
 	#ifdef ENABLE_LOG
-	if (failsafe && verbose) WriteToLog("Success: Flag failsafe detected");
+	if(verbose) WriteToLog(s);
+	if(failsafe && verbose) WriteToLog("Success: Flag failsafe detected\n");
 	#endif
 }
 
@@ -146,72 +158,81 @@ void InitFlag()
 
 s32 main(s32 argc, const char* argv[])
 {
-	//Launch VSH at first to avoid problems with the PAD
-	if(launchself("/dev_flash/sys/internal/sys_init_osd_orig.self")!=SUCCESS)
+	//This can sometimes cause problem with pad synchronizing but avoid the problem with vsh CEX and Kernel DEX
+	if(launchself("/dev_flash/vsh/module/vsh.self")!=SUCCESS)
 	{
-		{ BEEP1 }
+		{ BEEP2 }
 
-		if(launchself("/dev_flash/vsh/module/vsh.self")!=SUCCESS)
+		//EMERGENCY MODE
+		//Try to mount /dev_usb000 (wait 15sec)
+		try_mount_usb0();
+		// Try to launch /dev_usb000/emergency.self
+		if (dir_exists("/dev_usb000"))
 		{
-			{ BEEP2 }
+			#ifdef ENABLE_LOG
+			verbose = 1;
+			Open_Log("/dev_usb000/new_core.log");
+			if (verbose) WriteToLog("Error: vsh.self not found or corrupt\n");
+			#endif
 
-			//EMERGENCY MODE
-			//Try to mount /dev_usb000 (wait 15sec)
-			try_mount_usb0();
-			// Try to launch /dev_usb000/emergency.self
-			if (dir_exists("/dev_usb000"))
+			if(sys_fs_mount_ext("CELL_FS_IOS:BUILTIN_FLSH1", "CELL_FS_FAT", "/dev_rewrite", 0, NULL, 0)==SUCCESS)
 			{
 				#ifdef ENABLE_LOG
-				verbose = 1;
-				Open_Log("/dev_usb000/new_core.log");
-				if (verbose) WriteToLog("Error: sys_init_osd_orig.self and vsh.self not found or corrupt");
-				#endif
-
-				if(sys_fs_mount_ext("CELL_FS_IOS:BUILTIN_FLSH1", "CELL_FS_FAT", "/dev_rewrite", 0, NULL, 0)==SUCCESS)
-				{
-					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Success: /dev_rewrite mounted");
-					#endif
-				}
-				#ifdef ENABLE_LOG
-				else
-				{
-					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Error: /dev_rewrite not mounted");
-					#endif
-				}
-				#endif
-				if(launchself("/dev_usb000/emergency.self")!=SUCCESS)
-				{
-					{ BEEP3 }
-
-					#ifdef ENABLE_LOG
-					if (verbose) WriteToLog("Error: Launch /dev_usb000/emergency.self failed");
-					CloseLog();
-					#endif
-					unlink_secure("/dev_hdd0/tmp/turnoff");
-					{lv2syscall4(379,0x1100,0,0,0);} //Power off PS3
-					goto exit_new_core;
-				}
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: /dev_usb000/emergency.self launched");
+				if (verbose) WriteToLog("Success: /dev_rewrite mounted\n");
 				#endif
 			}
-			goto exit_new_core;
+			#ifdef ENABLE_LOG
+			else
+			{
+				#ifdef ENABLE_LOG
+				if (verbose) WriteToLog("Error: /dev_rewrite not mounted\n");
+				#endif
+			}
+			#endif
+			if(launchself("/dev_usb000/emergency.self")!=SUCCESS)
+			{
+				{ BEEP3 }
+
+				#ifdef ENABLE_LOG
+				if (verbose) WriteToLog("Error: Launch /dev_usb000/emergency.self failed\n");
+				CloseLog();
+				#endif
+				unlink_secure("/dev_hdd0/tmp/turnoff");
+				{lv2syscall4(379,0x1100,0,0,0);} //Power off PS3
+				goto exit_new_core;
+			}
+			#ifdef ENABLE_LOG
+			if (verbose) WriteToLog("Error: /dev_usb000/emergency.self launched\n");
+			#endif
 		}
-		else  goto exit_new_core;
-    }
-
-    //Wait to VSH.SELF mount /dev_usb000 if is connected (10sec)
-    int n = 0;
-	for( n = 0; n < 5; n++)
+		goto exit_new_core;
+	}
+	
+	int n;
+    
+	for(n = 0; n < 4; n++)
 	{
-        sysSleep(2);
-        if (dir_exists("/dev_usb000") == SUCCESS) break;
-        if (dir_exists("/dev_usb001") == SUCCESS) break;
+		sysSleep(3);
+		
+		if(file_exists("/dev_hdd0/tmp/core_flags/nousb") == SUCCESS)
+        {
+			sprintf(s, "Flag /dev_hdd/tmp/core_flags/nousb found in %d seconds\n", (3 * n) + 3);
+			break;
+		}
+		if(dir_exists("/dev_usb000") == SUCCESS) 
+        {
+			sprintf(s, "USB detected in %d seconds\n", (3 * n) + 3);
+			break;
+		}
+        if(dir_exists("/dev_usb001") == SUCCESS)
+        {
+			sprintf(s, "USB detected in %d seconds\n", (3 * n) + 3);
+			break;
+		}
     }
-
-	//INIT FLAG
+    
+    if(n == 4) sysSleep(1); //13 seconds for compatibility with dex
+    
 	InitFlag();
 
 	//FAILSAFE
