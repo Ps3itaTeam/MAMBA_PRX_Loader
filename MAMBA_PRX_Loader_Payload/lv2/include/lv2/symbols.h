@@ -841,7 +841,7 @@
     #define copy_from_user_symbol           0x100D0
     #define copy_from_process_symbol        0xFD7C
     #define page_allocate_symbol            0x63D64
-    #define page_free_symbol                0x637C4
+    #define page_free_symbol                0x637C8
     #define page_export_to_proc_symbol      0x63F00
     #define page_unexport_from_proc_symbol  0x636BC
     #define printf_symbol                   0x278978
