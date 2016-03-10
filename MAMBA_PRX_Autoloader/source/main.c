@@ -1,7 +1,7 @@
 /*
 	==============================================================
 
-	Unofficial MAMBA/PRX Autoloader by Ps3ita Team
+	Unofficial MAMBA/PRX Autoloader v3.1.0 (c) 2016 Ps3ita Team
 	
 	Original Author (c) 2015 NzV
 
@@ -87,6 +87,12 @@ int launchself(const char*file)
 
 }
 
+int sys_get_system_parameter(u64 *unk, u64 *unk2, u64 *unk3, u64 *bootparam)
+{	
+	lv2syscall4(380, (u64)unk, (u64)unk2, (u64)unk3, (u64)bootparam);
+	return_to_user_prog(s32);
+}
+
 int sys_fs_mount_ext(char const* deviceName, char const* deviceFileSystem, char const* devicePath, int writeProt, u32* buffer, u32 count)
 {
     lv2syscall8(837, (u64) deviceName, (u64) deviceFileSystem, (u64) devicePath, 0ULL, (u64) writeProt, 0ULL, (u64) buffer, (u64) count);
@@ -117,7 +123,7 @@ int try_mount_usb0()
 
 int failsafe = 0;
 
-char s[64];
+char s[1024];
 
 void InitFlag()
 {
@@ -161,7 +167,7 @@ s32 main(s32 argc, const char* argv[])
 	//This can sometimes cause problem with pad synchronizing but avoid the problem with vsh CEX and Kernel DEX
 	if(launchself("/dev_flash/vsh/module/vsh.self")!=SUCCESS)
 	{
-		{ BEEP2 }
+		{ BEEP1 }
 
 		//EMERGENCY MODE
 		//Try to mount /dev_usb000 (wait 15sec)
@@ -191,14 +197,12 @@ s32 main(s32 argc, const char* argv[])
 			#endif
 			if(launchself("/dev_usb000/emergency.self")!=SUCCESS)
 			{
-				{ BEEP3 }
+				{ BEEP2 }
 
 				#ifdef ENABLE_LOG
 				if (verbose) WriteToLog("Error: Launch /dev_usb000/emergency.self failed\n");
 				CloseLog();
 				#endif
-				unlink_secure("/dev_hdd0/tmp/turnoff");
-				{lv2syscall4(379,0x1100,0,0,0);} //Power off PS3
 				goto exit_new_core;
 			}
 			#ifdef ENABLE_LOG
@@ -206,6 +210,33 @@ s32 main(s32 argc, const char* argv[])
 			#endif
 		}
 		goto exit_new_core;
+	}
+	
+	//Fix to TMAPI
+	int i = 0;
+	u64 unk = 0, unk2 = 0, unk3 = 0, bootparam = 0;
+	u8 mode = 0, mode2 = 0;
+	
+	if(file_exists("/dev_flash/sys/internal/sys_agent.self") == SUCCESS && file_exists("/dev_flash/vsh/module/vsh.self.dexsp") != SUCCESS)
+	{
+		sys_get_system_parameter(&unk, &unk2, &unk3, &bootparam);
+	
+		//get boot mode
+		mode = ((bootparam >> 4) & 0xf);
+		mode2 = ((bootparam >> 0) & 0xf);
+		
+		if(mode % 2)
+		{
+			i += sprintf(&s[i], "Boot Mode: %s", (mode2 % 2) ? "System Software Mode\n" : "Debugger Mode\n");
+			i += sprintf(&s[i], "Trying to launch sys_agent.self..\n");
+			
+			if(launchself("/dev_flash/sys/internal/sys_agent.self") == SUCCESS)
+				i += sprintf(&s[i], "sys_agent.self loaded with success!\n");
+			else
+				i += sprintf(&s[i], "sys_agent.self not loaded!!\n");
+		}
+		else
+			i += sprintf(&s[i], "Boot Mode: Release Mode\n");
 	}
 	
 	int n;
@@ -216,21 +247,20 @@ s32 main(s32 argc, const char* argv[])
 		
 		if(file_exists("/dev_hdd0/tmp/core_flags/nousb") == SUCCESS)
         {
-			sprintf(s, "Flag /dev_hdd/tmp/core_flags/nousb found in %d seconds\n", (3 * n) + 3);
+			i += sprintf(&s[i], "Flag /dev_hdd/tmp/core_flags/nousb found in %d seconds\n", (3 * n) + 3);
 			break;
 		}
 		if(dir_exists("/dev_usb000") == SUCCESS) 
         {
-			sprintf(s, "USB detected in %d seconds\n", (3 * n) + 3);
+			i += sprintf(&s[i], "USB detected in %d seconds\n", (3 * n) + 3);
 			break;
 		}
         if(dir_exists("/dev_usb001") == SUCCESS)
         {
-			sprintf(s, "USB detected in %d seconds\n", (3 * n) + 3);
+			i+= sprintf(&s[i], "USB detected in %d seconds\n", (3 * n) + 3);
 			break;
 		}
     }
-    
     if(n == 4) sysSleep(1); //13 seconds for compatibility with dex
     
 	InitFlag();
@@ -242,7 +272,7 @@ s32 main(s32 argc, const char* argv[])
 	if (is_cobra() == SUCCESS)
 	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("Error: Running in COBRA mode!");
+		if (verbose) WriteToLog("Error: Running in COBRA mode!\n");
 		#endif
 		goto exit_new_core;
 	}
@@ -255,7 +285,7 @@ s32 main(s32 argc, const char* argv[])
 			for(i=0;i<(512/8);i++)
 					lv2poke(0x80000000007F0000ULL + (i * 8), 0ULL);
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Success: Cleared COBRA stage1");
+			if (verbose) WriteToLog("Success: Cleared COBRA stage1\n");
 			#endif
 		}
 
@@ -269,4 +299,3 @@ exit_new_core:
 	#endif
 	return SUCCESS;
 }
-

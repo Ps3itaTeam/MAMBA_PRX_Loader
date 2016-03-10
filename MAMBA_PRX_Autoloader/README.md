@@ -1,5 +1,6 @@
 ==============================================================
-Unofficial MAMBA/PRX Autoloader (c) 2015 NzV
+Unofficial MAMBA/PRX Autoloader v3.1.0 by (c) 2016 Ps3ita Team 
+Original author (c) 2015 NzV
 
 Load MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot using New Core.
 
@@ -14,7 +15,7 @@ Lv2 kernel DEX is slower to mount /dev_usb than the CEX one, is take 13 seconds
 but you can't wait 13 seconds after than a lv2 soft reboot is done, because it loaded the xmb faster and
 you can't intercept the hash of sprxs and patch it.
 For this the new_core look first if the flag "/dev_hdd/tmp/core_flags/nousb" exist and only if it is not found load the flags from USB.
-NOTE: the file "/dev_hdd/tmp/core_flags/nousb" is automatically created from MAMBA_PRX_Loader.
+NOTE: the file "/dev_hdd/tmp/core_flags/nousb" is automatically created from MAMBA_PRX_Loader and Funny Mamba Autoloader Installer.
 
 Flags can be placed in /dev_usb000/core_flags/ or /dev_usb001/core_flags/ or /dev_hdd0/tmp/core_flags/
 

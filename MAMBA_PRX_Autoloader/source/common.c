@@ -9,7 +9,7 @@
 
 #define FS_S_IFMT 0170000
 
-#define VERSION_NAME "MAMBA/PRX Autoloader v3.0.0 by NzV\n"
+#define VERSION_NAME "Unofficial MAMBA/PRX Autoloader v3.1.0 by Ps3ita Team (forked from NzV)"
 
 //----------------------------------------
 //LOG
