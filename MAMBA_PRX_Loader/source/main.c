@@ -1,15 +1,19 @@
 /*
 	==============================================================
 
-	MAMBA/PRX loader By NzV
+	Unofficial MAMBA/PRX loader By Ps3ita Team
+	
+	Original author NzV
 
 	Load of MAMBA and/or VSH plugins (with MAMBA or PRX Loader) after system boot.
 
 	==============================================================
 
 	==============================================================
+	
+	Unofficial MAMBA/PRX Autoloader by Ps3ita Team
 
-	MAMBA/PRX Autoloader By NzV
+	Original author NzV
 
 	Load of MAMBA and/or VSH plugins (with MAMBA or PRX Loader) at system boot.
 
@@ -27,7 +31,7 @@
 #include "mamba_prx_loader.h"
 #include "lv2_utils.h"
 
-#define VERSION_NAME 	"Unofficial MAMBA/PRX Loader v3.0.0 (forked from NzV)\r\n"
+#define VERSION_NAME 	"Unofficial MAMBA/PRX Loader v3.1.0 (forked from NzV)\r\n"
 
 #define SC_SYS_POWER 		(379)
 #define SYS_REBOOT			0x8201
@@ -238,381 +242,396 @@ int get_firmware()
 
 int run_uninstall_autoloader()
 {
+	char filename[128];
+	int fw_list[33] = { 0x355C,0x421C,0x430C,0x431C,0x440C,0x441C,0x446C,0x450C,0x453C,0x455C,0x460C,0x465C,0x466C,0x470C,0x475C,0x476C,0x478C,
+						0x355D,0x421D,0x430D,               0x441D,0x446D,0x450D,0x453D,0x455D,0x460D,0x465D,0x466D,0x470D,0x475D,0x476D,0x478D};
+	int i;
+	
+	#ifdef ENABLE_LOG
+	if (verbose) WriteToLog("[UNINSTALLER]\r\n");
+	#endif
+	//Check if installed
+	if(file_exists("/dev_flash/sys/internal/sys_init_osd_orig.self") != SUCCESS)
+	{
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("[UNINSTALLER]\r\n");
+		if (verbose) WriteToLog("sys_init_osd_orig.self not found\r\n");
 		#endif
-		//Check if installed
-		if(file_exists("/dev_flash/sys/internal/sys_init_osd_orig.self") != SUCCESS)
-		{
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Error: sys_init_osd_orig.self not found\r\n");
-			#endif
-			return FAILED;
-		}
-		//Remove flags
-		if(file_exists("/dev_hdd0/tmp/core_flags/nousb") == SUCCESS)
-		{
-			unlink_secure("/dev_hdd0/tmp/core_flags/nousb");
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Flag nousb removed\r\n");
-			#endif
-		}
+		goto residual;
+	}
+	//Remove flags
+	if(file_exists("/dev_hdd0/tmp/core_flags/nousb") == SUCCESS)
+	{
+		unlink_secure("/dev_hdd0/tmp/core_flags/nousb");
 		#ifdef ENABLE_LOG
-		else if (verbose) WriteToLog("Flags nousb always removed\r\n");
+		if (verbose) WriteToLog("Flag nousb removed\r\n");
 		#endif
-		if(dir_exists("/dev_hdd0/tmp/core_flags") == SUCCESS)
-		{
-			sysLv2FsRmdir("/dev_hdd0/tmp/core_flags");
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Directory core_flags removed\r\n");
-			#endif
-		}
+	}
+	#ifdef ENABLE_LOG
+	else if (verbose) WriteToLog("Flags nousb always removed\r\n");
+	#endif
+	if(dir_exists("/dev_hdd0/tmp/core_flags") == SUCCESS)
+	{
+		sysLv2FsRmdir("/dev_hdd0/tmp/core_flags");
 		#ifdef ENABLE_LOG
-		else if (verbose) WriteToLog("Directory core_flags always removed\r\n");
+		if (verbose) WriteToLog("Directory core_flags removed\r\n");
 		#endif
-		//Enable dev_blind
-		if(dir_exists("/dev_blind") != SUCCESS)
-		{
-			{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }
-		}
-		//Restore original ps2emu
-		int firmware = get_firmware();
-		char filename_ps2[256];
+	}
+	#ifdef ENABLE_LOG
+	else if (verbose) WriteToLog("Directory core_flags always removed\r\n");
+	#endif
+	//Enable dev_blind
+	if(dir_exists("/dev_blind") != SUCCESS)
+	{
+		{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }
+	}
+	//Restore original ps2emu
+	int firmware = get_firmware();
+	char filename_ps2[256];
 		
-		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_emu_%X.self", firmware);
-		if(file_exists(filename_ps2) == SUCCESS)
+	sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_emu_%X.self", firmware);
+	if(file_exists(filename_ps2) == SUCCESS)
+	{
+		unlink_secure("/dev_blind/ps2emu/ps2_emu.self");
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_emu.self");
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Original ps2_emu.self restored\r\n");
+		#endif
+	}
+	#ifdef ENABLE_LOG
+	else if(verbose) WriteToLog("Original ps2_emu.self not found!\r\n");
+	#endif
+	sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_gxemu_%X.self", firmware);
+	if(file_exists(filename_ps2) == SUCCESS)
+	{
+		unlink_secure("/dev_blind/ps2emu/ps2_gxemu.self");
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_gxemu.self");
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Original ps2_gxemu.self restored\r\n");
+		#endif
+	}
+	#ifdef ENABLE_LOG
+	else if(verbose) WriteToLog("Original ps2_gxemu.self not found!\r\n");
+	#endif
+	sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_netemu_%X.self", firmware);
+	if(file_exists(filename_ps2) == SUCCESS)
+	{
+		unlink_secure("/dev_blind/ps2emu/ps2_netemu.self");
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_netemu.self");
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Original ps2_netemu.self restored\r\n");
+		#endif
+	}
+	#ifdef ENABLE_LOG
+	else if(verbose) WriteToLog("Original ps2_netemu.self not found!\r\n");
+	#endif
+	if(file_exists("/dev_blind/ps2emu/ps2gxemu_stage2.bin") == SUCCESS) 
+		unlink_secure("/dev_blind/ps2emu/ps2gxemu_stage2.bin");
+	if(file_exists("/dev_blind/ps2emu/ps2hwemu_stage2.bin") == SUCCESS)
+		unlink_secure("/dev_blind/ps2emu/ps2hwemu_stage2.bin");
+	//Restore original sys_init_osd.self
+	if(file_exists(PATH_SYS_INI_OSD_ORIG) == SUCCESS)
+	{
+		if(file_exists(PATH_SYS_INI_OSD) == SUCCESS)
 		{
-			unlink_secure("/dev_blind/ps2emu/ps2_emu.self");
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_emu.self");
-			if (verbose) WriteToLog("Original ps2_emu.self restored\r\n");
-		}
-		else if(verbose) WriteToLog("Original ps2_emu.self not found!\r\n");
-		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_gxemu_%X.self", firmware);
-		if(file_exists(filename_ps2) == SUCCESS)
-		{
-			unlink_secure("/dev_blind/ps2emu/ps2_gxemu.self");
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_gxemu.self");
-			if (verbose) WriteToLog("Original ps2_gxemu.self restored\r\n");
-		}
-		else if(verbose) WriteToLog("Original ps2_gxemu.self not found!\r\n");
-		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_netemu_%X.self", firmware);
-		if(file_exists(filename_ps2) == SUCCESS)
-		{
-			unlink_secure("/dev_blind/ps2emu/ps2_netemu.self");
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_netemu.self");
-			if (verbose) WriteToLog("Original ps2_netemu.self restored\r\n");
-		}
-		else if(verbose) WriteToLog("Original ps2_netemu.self not found!\r\n");
-	    if(file_exists("/dev_blind/ps2emu/ps2gxemu_stage2.bin") == SUCCESS) 
-			unlink_secure("/dev_blind/ps2emu/ps2gxemu_stage2.bin");
-		if(file_exists("/dev_blind/ps2emu/ps2hwemu_stage2.bin") == SUCCESS)
-			unlink_secure("/dev_blind/ps2emu/ps2hwemu_stage2.bin");
-		//Restore original sys_init_osd.self
-		if(file_exists(PATH_SYS_INI_OSD_ORIG) == SUCCESS)
-		{
-			if(file_exists(PATH_SYS_INI_OSD) == SUCCESS)
-			{
-				unlink_secure(PATH_SYS_INI_OSD);
-				sysLv2FsRename(PATH_SYS_INI_OSD_ORIG, PATH_SYS_INI_OSD);
-				//Remove payload
-				char filename[128];
-				int fw_list[33] = { 0x355C,0x421C,0x430C,0x431C,0x440C,0x441C,0x446C,0x450C,0x453C,0x455C,0x460C,0x465C,0x466C,0x470C,0x475C,0x476C,0x478C,
-									0x355D,0x421D,0x430D,               0x441D,0x446D,0x450D,0x453D,0x455D,0x460D,0x465D,0x466D,0x470D,0x475D,0x476D,0x478D};
-				int i;
-				for (i = 0; i < 33; i++)
-				{
-					if (fw_list[i] == 0) break;
-					sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", fw_list[i]);
-					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", fw_list[i]);
-					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					//Remove residual ps2emu 
-					sprintf (filename, "/dev_hdd0/tmp/ps2_emu_%X.self", fw_list[i]);
-					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					sprintf (filename, "/dev_hdd0/tmp/ps2_gxemu_%X.self", fw_list[i]);
-					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					sprintf (filename, "/dev_hdd0/tmp/ps2_netemu_%X.self", fw_list[i]);
-					if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-				}
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Success: MAMBA/PRX Autoloader uninstalled\r\n");
-				#endif
-				return SUCCESS;
-			}
-			else
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: sys_init_osd.self not found\r\n");
-				#endif
-				return FAILED;
-			}
+			unlink_secure(PATH_SYS_INI_OSD);
+			sysLv2FsRename(PATH_SYS_INI_OSD_ORIG, PATH_SYS_INI_OSD);
 		}
 		else
 		{
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Error: /dev_blind not mounted\r\n");
+			if(verbose) WriteToLog("Error: sys_init_osd.self not found\r\n");
 			#endif
 			return FAILED;
 		}
+	}
+	else
+	{
+		#ifdef ENABLE_LOG
+		if(verbose) WriteToLog("Error: /dev_blind not mounted\r\n");
+		#endif
+		return FAILED;
+	}
+	//Remove payload and residual ps2emu
+residual:
+
+	for (i = 0; i < 33; i++)
+	{
+		if (fw_list[i] == 0) break;
+		sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", fw_list[i]);
+		if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+		sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", fw_list[i]);
+		if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+		//ps2emu
+		sprintf (filename, "/dev_hdd0/tmp/ps2_emu_%X.self", fw_list[i]);
+		if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+		sprintf (filename, "/dev_hdd0/tmp/ps2_gxemu_%X.self", fw_list[i]);
+		if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+		sprintf (filename, "/dev_hdd0/tmp/ps2_netemu_%X.self", fw_list[i]);
+		if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+	}
+	#ifdef ENABLE_LOG
+	if(verbose) WriteToLog("Success: MAMBA/PRX Autoloader uninstalled\r\n");
+	#endif
+	return SUCCESS;
 }
 
 int run_install_autoloader()
 {
-		//Init FW
-		int firmware = get_firmware();
-		int firmware2 = firmware;
-		int is_rebug = -1, fd = -1;
+	//Init FW
+	int firmware = get_firmware();
+	int firmware2 = firmware;
+	int is_rebug = -1, fd = -1;
 		
-		//Is Rebug Rex
-		if(dir_exists("/dev_flash/rebug") == SUCCESS && file_exists("/dev_flash/sys/external/libda-vsh.sprx") == SUCCESS)
-		{
-			if(firmware % 2)
-				firmware2 -= 1; // C
-			else firmware2 += 1; //D
-			is_rebug = 0;
-		}
+	//Is Rebug Rex
+	if(dir_exists("/dev_flash/rebug") == SUCCESS && file_exists("/dev_flash/sys/external/libda-vsh.sprx") == SUCCESS)
+	{
+		if(firmware % 2)
+			firmware2 -= 1; // C
+		else firmware2 += 1; //D
+		is_rebug = 0;
+	}
 		
+	#ifdef ENABLE_LOG
+	if (verbose) {WriteToLog(PATH_SYS_INI_OSD_NEW); WriteToLog("\r\n");}
+	#endif
+	if(file_exists(PATH_SYS_INI_OSD_NEW) != SUCCESS)
+	{
 		#ifdef ENABLE_LOG
-		if (verbose) {WriteToLog(PATH_SYS_INI_OSD_NEW); WriteToLog("\r\n");}
+		if (verbose) WriteToLog("Error: Unable to find file\r\n");
 		#endif
-		if(file_exists(PATH_SYS_INI_OSD_NEW) != SUCCESS)
+		return FAILED;
+	}
+	//mamba loader	
+	char filename_mpl_payload[256];
+	char filename_mpl_payload2[256];
+	sprintf (filename_mpl_payload, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware);
+	#ifdef ENABLE_LOG
+	if (verbose) {WriteToLog(filename_mpl_payload); WriteToLog("\r\n");}
+	#endif
+	if(file_exists(filename_mpl_payload) != SUCCESS)
+	{
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Error: Unable to find file\r\n");
+		#endif
+		return FAILED;
+	}
+	if(is_rebug == 0) 
+	{
+		sprintf (filename_mpl_payload2, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware2);
+		#ifdef ENABLE_LOG
+		if (verbose) {WriteToLog(filename_mpl_payload2); WriteToLog("\r\n");}
+		#endif
+		if(file_exists(filename_mpl_payload2) != SUCCESS)
 		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif
 			return FAILED;
 		}
-		//mamba loader	
-		char filename_mpl_payload[256];
-		char filename_mpl_payload2[256];
-		sprintf (filename_mpl_payload, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware);
+	}
+	//mamba payload
+	char filename_mamba_payload[256];
+	char filename_mamba_payload2[256];
+	sprintf (filename_mamba_payload, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware);
+	#ifdef ENABLE_LOG
+	if (verbose) {WriteToLog(filename_mamba_payload); WriteToLog("\r\n");}
+	#endif
+	if(file_exists(filename_mamba_payload) != SUCCESS)
+	{
 		#ifdef ENABLE_LOG
-		if (verbose) {WriteToLog(filename_mpl_payload); WriteToLog("\r\n");}
+		if (verbose) WriteToLog("Error: Unable to find file\r\n");
 		#endif
-		if(file_exists(filename_mpl_payload) != SUCCESS)
+		return FAILED;
+	}
+	if(is_rebug == 0) 
+	{
+		sprintf (filename_mamba_payload2, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware2);
+		#ifdef ENABLE_LOG
+		if (verbose) {WriteToLog(filename_mamba_payload2); WriteToLog("\r\n");}
+		#endif
+		if(file_exists(filename_mamba_payload2) != SUCCESS)
 		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif
 			return FAILED;
 		}
-		if(is_rebug == 0) 
-		{
-			sprintf (filename_mpl_payload2, "%smpl_payload_%X.bin",PATH_DIR_PAYLOAD , firmware2);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_mpl_payload2); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_mpl_payload2) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-		}
-		//mamba payload
-		char filename_mamba_payload[256];
-		char filename_mamba_payload2[256];
-		sprintf (filename_mamba_payload, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware);
+	}
+	//ps2emu
+	if(ps2emu_folder)
+	{
+		char filename_ps2emu[256];
+		sprintf (filename_ps2emu, "%s%X/ps2_emu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
 		#ifdef ENABLE_LOG
-		if (verbose) {WriteToLog(filename_mamba_payload); WriteToLog("\r\n");}
+		if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
 		#endif
-		if(file_exists(filename_mamba_payload) != SUCCESS)
+		if(file_exists(filename_ps2emu) != SUCCESS)
 		{
 			#ifdef ENABLE_LOG
 			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif
 			return FAILED;
 		}
-		if(is_rebug == 0) 
-		{
-			sprintf (filename_mamba_payload2, "%smamba_%X.bin",PATH_DIR_PAYLOAD , firmware2);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_mamba_payload2); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_mamba_payload2) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-		}
-		//ps2emu
-		if(ps2emu_folder)
-		{
-			char filename_ps2emu[256];
-			sprintf (filename_ps2emu, "%s%X/ps2_emu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_ps2emu) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-			sprintf (filename_ps2emu, "%s%X/ps2_gxemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_ps2emu) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-			sprintf (filename_ps2emu, "%s%X/ps2gxemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_ps2emu) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-			sprintf (filename_ps2emu, "%s%X/ps2hwemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_ps2emu) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-			sprintf (filename_ps2emu, "%s%X/ps2_netemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			#ifdef ENABLE_LOG
-			if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
-			#endif
-			if(file_exists(filename_ps2emu) != SUCCESS)
-			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: Unable to find file\r\n");
-				#endif
-				return FAILED;
-			}
-		}
-		//Uninstall New_Core
-		run_uninstall_autoloader();
+		sprintf (filename_ps2emu, "%s%X/ps2_gxemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
 		#ifdef ENABLE_LOG
-		if (verbose) WriteToLog("[INSTALLER]\r\n");
+		if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
 		#endif
-		//Create directory core_flags and file nousb
-		if(dir_exists("/dev_hdd0/tmp/core_flags") != SUCCESS)
+		if(file_exists(filename_ps2emu) != SUCCESS)
 		{
-			sysLv2FsMkdir("/dev_hdd0/tmp/core_flags", 0777);
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Create directory core_flags done\r\n");
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif
+			return FAILED;
 		}
+		sprintf (filename_ps2emu, "%s%X/ps2gxemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
 		#ifdef ENABLE_LOG
-		else if (verbose) WriteToLog("Directory core_flags always there\r\n");
+		if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
 		#endif
-		if(file_exists("/dev_hdd0/tmp/core_flags/nousb") != SUCCESS)
+		if(file_exists(filename_ps2emu) != SUCCESS)
 		{
-			sysLv2FsOpen("/dev_hdd0/tmp/core_flags/nousb", SYS_O_WRONLY | SYS_O_CREAT | SYS_O_TRUNC, &fd, 0777, NULL, 0);
-			sysLv2FsClose(fd);
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Create flags nousb done\r\n");
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
 			#endif
+			return FAILED;
 		}
+		sprintf (filename_ps2emu, "%s%X/ps2hwemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
 		#ifdef ENABLE_LOG
-		else if (verbose) WriteToLog("Flags nousb always there\r\n");
+		if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
 		#endif
-		//Enable dev_blind
-		if(file_exists(PATH_SYS_INI_OSD) != SUCCESS)
-			{{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }}
-		//Install New_Core
-		if(file_exists(PATH_SYS_INI_OSD_ORIG) != SUCCESS)
+		if(file_exists(filename_ps2emu) != SUCCESS)
 		{
-			if((file_exists(PATH_SYS_INI_OSD) == SUCCESS))
+			#ifdef ENABLE_LOG
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
+			#endif
+			return FAILED;
+		}
+		sprintf (filename_ps2emu, "%s%X/ps2_netemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		#ifdef ENABLE_LOG
+		if (verbose) {WriteToLog(filename_ps2emu); WriteToLog("\r\n");}
+		#endif
+		if(file_exists(filename_ps2emu) != SUCCESS)
+		{
+			#ifdef ENABLE_LOG
+			if (verbose) WriteToLog("Error: Unable to find file\r\n");
+			#endif
+			return FAILED;
+		}
+	}
+	//Uninstall New_Core
+	run_uninstall_autoloader();
+	#ifdef ENABLE_LOG
+	if (verbose) WriteToLog("[INSTALLER]\r\n");
+	#endif
+	//Create directory core_flags and file nousb
+	if(dir_exists("/dev_hdd0/tmp/core_flags") != SUCCESS)
+	{
+		sysLv2FsMkdir("/dev_hdd0/tmp/core_flags", 0777);
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Create directory core_flags done\r\n");
+		#endif
+	}
+	#ifdef ENABLE_LOG
+	else if (verbose) WriteToLog("Directory core_flags always there\r\n");
+	#endif
+	if(file_exists("/dev_hdd0/tmp/core_flags/nousb") != SUCCESS)
+	{
+		sysLv2FsOpen("/dev_hdd0/tmp/core_flags/nousb", SYS_O_WRONLY | SYS_O_CREAT | SYS_O_TRUNC, &fd, 0777, NULL, 0);
+		sysLv2FsClose(fd);
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Create flags nousb done\r\n");
+		#endif
+	}
+	#ifdef ENABLE_LOG
+	else if (verbose) WriteToLog("Flags nousb always there\r\n");
+	#endif
+	//Enable dev_blind
+	if(file_exists(PATH_SYS_INI_OSD) != SUCCESS)
+		{{lv2syscall8(SC_FS_MOUNT, (u64)(char*)"CELL_FS_IOS:BUILTIN_FLSH1", (u64)(char*)"CELL_FS_FAT", (u64)(char*)"/dev_blind", 0, 0, 0, 0, 0); }}
+	//Install New_Core
+	if(file_exists(PATH_SYS_INI_OSD_ORIG) != SUCCESS)
+	{
+		if((file_exists(PATH_SYS_INI_OSD) == SUCCESS))
+		{
+			sysLv2FsChmod(PATH_SYS_INI_OSD, 0777);
+			sysLv2FsRename(PATH_SYS_INI_OSD, PATH_SYS_INI_OSD_ORIG);
+			CopyFile(PATH_SYS_INI_OSD_NEW, PATH_SYS_INI_OSD);
+			char filename[128];
+			char filename2[128];
+			//rebug
+			if(is_rebug == 0) 
 			{
-				sysLv2FsChmod(PATH_SYS_INI_OSD, 0777);
-				sysLv2FsRename(PATH_SYS_INI_OSD, PATH_SYS_INI_OSD_ORIG);
-				CopyFile(PATH_SYS_INI_OSD_NEW, PATH_SYS_INI_OSD);
-				char filename[128];
-				char filename2[128];
-				//rebug
-				if(is_rebug == 0) 
-				{
-					sprintf (filename2, "/dev_blind/sys/internal/mpl_payload_%X.bin", firmware2);
-					if (file_exists(filename2) == SUCCESS) unlink_secure(filename2);
-						CopyFile(filename_mpl_payload2, filename2);
-					sprintf (filename2, "/dev_blind/sys/internal/mamba_%X.bin", firmware2);
-					if (file_exists(filename2) == SUCCESS) unlink_secure(filename2);
-						CopyFile(filename_mamba_payload2, filename2);
-				}
-				sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", firmware);
-				if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					CopyFile(filename_mpl_payload, filename);
-				sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", firmware);
-				if (file_exists(filename) == SUCCESS) unlink_secure(filename);
-					CopyFile(filename_mamba_payload, filename);
-				if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt") == SUCCESS) && (file_exists(VSH_PLUGINS_PATH_MAMBA) != SUCCESS))
-				{
-					CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt", VSH_PLUGINS_PATH_MAMBA);
-				}
-				if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt") == SUCCESS)  && (file_exists(VSH_PLUGINS_PATH_PRX) != SUCCESS))
-				{
-					CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt", VSH_PLUGINS_PATH_PRX);
-				}
+				sprintf (filename2, "/dev_blind/sys/internal/mpl_payload_%X.bin", firmware2);
+				if (file_exists(filename2) == SUCCESS) unlink_secure(filename2);
+					CopyFile(filename_mpl_payload2, filename2);
+				sprintf (filename2, "/dev_blind/sys/internal/mamba_%X.bin", firmware2);
+				if (file_exists(filename2) == SUCCESS) unlink_secure(filename2);
+					CopyFile(filename_mamba_payload2, filename2);
 			}
-			else
+			sprintf (filename, "/dev_blind/sys/internal/mpl_payload_%X.bin", firmware);
+			if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+				CopyFile(filename_mpl_payload, filename);
+			sprintf (filename, "/dev_blind/sys/internal/mamba_%X.bin", firmware);
+			if (file_exists(filename) == SUCCESS) unlink_secure(filename);
+				CopyFile(filename_mamba_payload, filename);
+			if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt") == SUCCESS) && (file_exists(VSH_PLUGINS_PATH_MAMBA) != SUCCESS))
 			{
-				#ifdef ENABLE_LOG
-				if (verbose) WriteToLog("Error: sys_init_osd.self not found (/dev_blind not mounted?)\r\n");
-				#endif
-				return FAILED;
+				CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/mamba_plugins.txt", VSH_PLUGINS_PATH_MAMBA);
+			}
+			if ((file_exists("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt") == SUCCESS)  && (file_exists(VSH_PLUGINS_PATH_PRX) != SUCCESS))
+			{
+				CopyFile("/dev_hdd0/game/MAMBAINST/USRDIR/prx_plugins.txt", VSH_PLUGINS_PATH_PRX);
 			}
 		}
 		else
 		{
 			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("Error: sys_init_osd_orig.self already exist\r\n");
+			if (verbose) WriteToLog("Error: sys_init_osd.self not found (/dev_blind not mounted?)\r\n");
 			#endif
 			return FAILED;
 		}
-		//Install ps2emu
-		if(ps2emu_folder)
-		{
-			char filename_ps2[256];
+	}
+	else
+	{
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("Error: sys_init_osd_orig.self already exist\r\n");
+		#endif
+		return FAILED;
+	}
+	//Install ps2emu
+	if(ps2emu_folder)
+	{
+		char filename_ps2[256];
 			
-			//backup
-			sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_emu_%X.self", firmware);
-			CopyFile("/dev_blind/ps2emu/ps2_emu.self", filename_ps2);
-			sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_gxemu_%X.self", firmware);
-			CopyFile("/dev_blind/ps2emu/ps2_gxemu.self", filename_ps2);
-			sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_netemu_%X.self", firmware);
-			CopyFile("/dev_blind/ps2emu/ps2_netemu.self", filename_ps2);
-			//remove
-			unlink_secure("/dev_blind/ps2emu/ps2_emu.self");
-			unlink_secure("/dev_blind/ps2emu/ps2_gxemu.self");
-			unlink_secure("/dev_blind/ps2emu/ps2_netemu.self");
-			//copy new
-			sprintf (filename_ps2, "%s%X/ps2_emu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_emu.self");
-			sprintf (filename_ps2, "%s%X/ps2_gxemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_gxemu.self");
-			sprintf (filename_ps2, "%s%X/ps2gxemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2gxemu_stage2.bin");
-			sprintf (filename_ps2, "%s%X/ps2hwemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2hwemu_stage2.bin");
-			sprintf (filename_ps2, "%s%X/ps2_netemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
-			CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_netemu.self");
-		}
-		else
-		{
-			#ifdef ENABLE_LOG
-			if (verbose) WriteToLog("There is no PS2 ISO support for your CFW\r\n");
-			#endif
-		}
-		return SUCCESS;
+		//backup
+		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_emu_%X.self", firmware);
+		CopyFile("/dev_blind/ps2emu/ps2_emu.self", filename_ps2);
+		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_gxemu_%X.self", firmware);
+		CopyFile("/dev_blind/ps2emu/ps2_gxemu.self", filename_ps2);
+		sprintf (filename_ps2, "/dev_hdd0/tmp/ps2_netemu_%X.self", firmware);
+		CopyFile("/dev_blind/ps2emu/ps2_netemu.self", filename_ps2);
+		//remove
+		unlink_secure("/dev_blind/ps2emu/ps2_emu.self");
+		unlink_secure("/dev_blind/ps2emu/ps2_gxemu.self");
+		unlink_secure("/dev_blind/ps2emu/ps2_netemu.self");
+		//copy new
+		sprintf (filename_ps2, "%s%X/ps2_emu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_emu.self");
+		sprintf (filename_ps2, "%s%X/ps2_gxemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_gxemu.self");
+		sprintf (filename_ps2, "%s%X/ps2gxemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2gxemu_stage2.bin");
+		sprintf (filename_ps2, "%s%X/ps2hwemu_stage2.bin",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2hwemu_stage2.bin");
+		sprintf (filename_ps2, "%s%X/ps2_netemu.self",PATH_DIR_PS2EMU_NEW, ps2emu_folder);
+		CopyFile(filename_ps2, "/dev_blind/ps2emu/ps2_netemu.self");
+	}
+	else
+	{
+		#ifdef ENABLE_LOG
+		if (verbose) WriteToLog("There is no PS2 ISO support for your CFW\r\n");
+		#endif
+	}
+	return SUCCESS;
 }
 
 //----------------------------------------

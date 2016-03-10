@@ -1,5 +1,6 @@
 -----------------------------------------------------------------------------------------------------
-MAMBA/PRX Loader (+Autoloader) by NzV
+Unofficial MAMBA/PRX Loader (+Autoloader) by Ps3ita Team
+Original author NzV
 -----------------------------------------------------------------------------------------------------
 
 	MAMBA/PRX Loader is an homebrew who allow you to load MAMBA and/or VSH plugins (with MAMBA or
@@ -17,6 +18,7 @@ How to use it after system boot:
 	Note: If you want to load only MAMBA and no VSH plugins hold L1 when "MAMBA/PRX Loader" start.
 		  if you want to load only VSH plugins and no MAMBA (PRX Loader will be used) hold R1 when
 		  "MAMBA/PRX Loader" start.
+		  Ps2 iso are not supported in this mode!
 		  
 -----------------------------------------------------------------------------------------------------
 How to use it at system boot (Autoloader):
@@ -30,9 +32,9 @@ How to use it at system boot (Autoloader):
 	  beep if no error has occurred, if you earn more beep an error has occurred
 	  (see log: /dev_hdd/tmp/MAMBA_PRX_Loader.log)
 	
-	Boot flags (can be placed in /dev_usb000/core_flags/ or /dev_usb001/core_flags/
-	or /dev_hdd0/tmp/core_flags/):
+	Boot flags (can be placed in /dev_usb000/core_flags/ or /dev_usb001/core_flags/ or /dev_hdd0/tmp/core_flags/)
 
+		- "nousb"			Don't load flags from USB (obviously this only work if placed in /dev_hdd0/tmp/core_flags/)
 		- "failsafe"  		Start in normal mode (MAMBA and VSH plugins are not loaded)
 		- "mamba_off"   	Don't load  MAMBA (PRX Loader will be used instead of MAMBA to load VSH plugins)
 		- "noplugins"   	Don't load  VSH plugins at boot
@@ -43,9 +45,22 @@ How to use it at system boot (Autoloader):
 Supported CFW:
 -----------------------------------------------------------------------------------------------------
 
-	-CEX: 3.55, 4.21, 4.30, 4.31, 4.40, 4.41, 4.46, 4.50, 4.53, 4.55, 4.60, 4.65, 4.66, 4.70
-	-DEX: 3.55, 4.21, 4.30, 4.41, 4.46, 4.50, 4.53, 4.55, 4.65, 4.66, 4.70
+	-CEX: 3.55, 4.21, 4.30, 4.31, 4.40, 4.41, 4.46, 4.50, 4.53, 4.55, 4.60, 4.65, 4.66, 4.70, 4.75, 4.76, 4.78
+	-DEX: 3.55, 4.21, 4.30, 4.41, 4.46, 4.50, 4.53, 4.55, 4.65, 4.66, 4.70, 4.75, 4.76, 4.78
 	
+-----------------------------------------------------------------------------------------------------
+PS2 ISO support:
+-----------------------------------------------------------------------------------------------------
+
+	-CEX: 4.46, 4.50, 4.65, 4.66, 4.70, 4.75, 4.76, 4.78
+	-DEX: 4.46, 4.50, 4.65, 4.70, 4.75, 4.76, 4.78
+
+-----------------------------------------------------------------------------------------------------
+PSP ISO support:
+-----------------------------------------------------------------------------------------------------
+
+	-CEX: 4.21, 4.30, 4.31, 4.40, 4.41, 4.46, 4.50, 4.53, 4.55, 4.60, 4.65, 4.66, 4.70, 4.75, 4.76, 4.78
+	-DEX: 4.21, 4.30, 4.41, 4.46, 4.50, 4.53, 4.55, 4.65, 4.70, 4.75, 4.76, 4.78
 	
 -----------------------------------------------------------------------------------------------------
 VSH plugins:
